@@ -7,7 +7,8 @@ function sendMessage(chatId) {
     const token = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
     if (!token || !userId) {
-        console.error("Thiếu token hoặc userId");
+        localStorage.clear();
+        window.location.href = "/login.html";
         return;
     }
 

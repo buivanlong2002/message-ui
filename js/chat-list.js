@@ -2,11 +2,11 @@
  function loadChatList() {
     const token = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
-
-    if (!token || !userId) {
-        console.error("Thiếu token hoặc userId. Vui lòng đăng nhập lại.");
-        return;
-    }
+     if (!token || !userId) {
+         localStorage.clear();
+         window.location.href = "/login.html";
+         return;
+     }
 
     fetchAPI(`/conversations/user/${userId}`, {
         method: 'GET',
