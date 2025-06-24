@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <title>Giao diện Chat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+<div id="container">
+    <!-- Sidebar -->
+    <div id="sidebar">
+        <div id="sidebar-top">
+            <i class="bi bi-list"></i>
+            <input type="text" id="search-box" placeholder="Tìm kiếm...">
+        </div>
+        <div id="chat-list">
+            <!-- Danh sách chat sẽ được nạp từ js/chat-list.js -->
+        </div>
+    </div>
+
+    <!-- Chat content -->
+    <div id="chat-content">
+        <div id="chat-header"></div>
+        <div id="chat-messages" class="chat-messages"></div>
+        <div id="chat-input-container" class="chat-input-container">
+    </div>
+</div>
+
+
+<script src="js/api.js"></script>
+<script src="js/chat-list.js"></script>
+<script src="js/chat-message.js"></script>
+</body>
+</html>
