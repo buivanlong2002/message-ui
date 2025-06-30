@@ -1,35 +1,169 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8" />
-    <title>Giao diện Chat</title>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Giao diện Chat - TomoTalk</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/style.css"/>
 </head>
 <body>
 <div id="container">
     <!-- Sidebar -->
     <div id="sidebar">
         <div id="sidebar-top">
-            <i class="bi bi-list"></i>
+            <i class="bi bi-list" id="menu-toggle"></i>
             <input type="text" id="search-box" placeholder="Tìm kiếm...">
         </div>
-        <div id="chat-list">
-            <!-- Danh sách chat sẽ được nạp từ js/chat-list.js -->
+        <div id="sidebar-menu" class="menu-dropdown">
+            <ul>
+                <li data-section="profile">Trang cá nhân</li>
+                <li data-section="security">Bảo mật</li>
+                <li data-section="logout">Đăng xuất</li>
+            </ul>
         </div>
+        <div id="chat-list"></div>
     </div>
 
     <!-- Chat content -->
     <div id="chat-content">
         <div id="chat-header"></div>
-        <div id="chat-messages" class="chat-messages"></div>
-        <div id="chat-input-container" class="chat-input-container">
+        <div class="chat-and-profile">
+            <div id="chat-area" class="chat-area">
+                <div id="chat-messages" class="chat-messages"></div>
+                <div id="chat-input-container" class="chat-input-container"></div>
+            </div>
+            <div id="profile-content" class="profile-content" style="display: none;">
+                <div class="profile-header">
+                    <button id="profile-close" class="profile-close">×</button>
+                    <h2>Thông tin cuộc trò chuyện</h2>
+                </div>
+                <ul>
+                    <li data-action="search-messages"><i class="bi bi-search"></i> Tìm kiếm tin nhắn</li>
+                    <li data-action="archived"><i class="bi bi-archive"></i> Lưu trữ</li>
+                    <li data-action="photos"><i class="bi bi-image"></i> Ảnh</li>
+                    <li data-action="files"><i class="bi bi-file-earmark"></i> File</li>
+                    <li data-action="links"><i class="bi bi-link"></i> Liên kết</li>
+                    <li data-action="notifications"><i class="bi bi-bell"></i> Thông báo</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu overlay for content -->
+    <div id="menu-content-overlay" class="menu-overlay">
+        <div class="menu-content">
+            <button id="menu-close" class="menu-close">×</button>
+            <div id="menu-section-content" class="menu-section-content">
+                <div id="profile" class="menu-section">
+                    <h2>Trang cá nhân</h2>
+                    <p>Thông tin cá nhân của bạn sẽ được hiển thị ở đây.</p>
+                </div>
+                <div id="security" class="menu-section" style="display: none;">
+                    <h2>Bảo mật</h2>
+                    <p>Cài đặt bảo mật và quyền riêng tư.</p>
+                </div>
+                <div id="logout" class="menu-section" style="display: none;">
+                    <h2>Đăng xuất</h2>
+                    <p>Bạn có chắc chắn muốn đăng xuất?</p>
+                    <button id="confirm-logout">Xác nhận</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-
 <script src="js/api.js"></script>
+<script src="service/ConversationService.js"></script>
+<script src="service/messageService.js"></script>
 <script src="js/chat-list.js"></script>
 <script src="js/chat-message.js"></script>
-</body>
-</html>
+<script>
+    // Toggle menu dropdown in sidebar
+    document.getElementById('menu-toggle').addEventListener('click', function() {
+        const menu = document.getElementById('sidebar-menu');
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        console.log('Menu toggled');
+    });
+
+    // Handle menu item clicks to show overlay content
+    document.querySelectorAll('#sidebar-menu li').forEach(item => {
+        item.addEventListener('click', function() {
+            const section = this.getAttribute('data-section');
+            const overlay = document.getElementById('menu-content-overlay');
+            const sections = document.querySelectorAll('.menu-section');
+
+            overlay.style.display = 'flex';
+            sections.forEach(sec => sec.style.display = 'none');
+            document.getElementById(section).style.display = 'block';
+            document.getElementById('sidebar-menu').style.display = 'none';
+            console.log('Menu overlay opened:', section);
+        });
+    });
+
+    // Close menu overlay
+    document.getElementById('menu-close').addEventListener('click', function() {
+        document.getElementById('menu-content-overlay').style.display = 'none';
+        console.log('Menu overlay closed');
+    });
+
+    // Handle logout confirmation
+    document.getElementById('confirm-logout').addEventListener('click', function() {
+        alert('Bạn đã đăng xuất!');
+        document.getElementById('menu-content-overlay').style.display = 'none';
+        console.log('Logout confirmed');
+    });
+
+    // Handle profile content
+    function goToProfile() {
+        const chatArea = document.getElementById('chat-area');
+        const profileContent = document.getElementById('profile-content');
+        if (window.innerWidth <= 768) {
+            profileContent.classList.add('active');
+        } else {
+            chatArea.classList.add('split');
+        }
+        profileContent.style.display = 'block';
+        console.log('Profile opened, screen width:', window.innerWidth);
+    }
+
+    // Close profile content
+    document.getElementById('profile-close').addEventListener('click', function() {
+        const chatArea = document.getElementById('chat-area');
+        const profileContent = document.getElementById('profile-content');
+        if (window.innerWidth <= 768) {
+            profileContent.classList.remove('active');
+        } else {
+            chatArea.classList.remove('split');
+        }
+        profileContent.style.display = 'none';
+        console.log('Profile closed');
+    });
+
+    // Handle profile content actions
+    document.querySelectorAll('#profile-content li').forEach(item => {
+        item.addEventListener('click', function() {
+            const action = this.getAttribute('data-action');
+            alert(`Đã chọn: ${action}`);
+            console.log('Profile action clicked:', action);
+        });
+    });
+
+    // Auto close profile when switching chats
+    document.getElementById('chat-list').addEventListener('click', function(e) {
+        const chatItem = e.target.closest('.chat-item');
+        if (chatItem) {
+            const chatArea = document.getElementById('chat-area');
+            const profileContent = document.getElementById('profile-content');
+            if (profileContent.style.display === 'block') {
+                if (window.innerWidth <= 768) {
+                    profileContent.classList.remove('active');
+                } else {
+                    chatArea.classList.remove('split');
+                }
+                profileContent.style.display = 'none';
+                console.log('Profile closed due to chat switch');
+            }
+        }
+    });
+</script>

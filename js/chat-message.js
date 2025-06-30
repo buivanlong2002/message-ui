@@ -1,9 +1,9 @@
-// Gửi tin nhắn tới API
-function sendMessage(chatId) {
-    const inputField = document.getElementById("chat-input");
-    const content = inputField.value.trim();
-    if (!content) return;
+function loadChat(chatId, element, name, avatarUrl) {
+    // Active item
+    document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
+    if (element) element.classList.add('active');
 
+    // Token & userId
     const token = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
     if (!token || !userId) {
@@ -12,56 +12,14 @@ function sendMessage(chatId) {
         return;
     }
 
-    const messageData = {
-        conversationId: chatId,
-        senderId: userId,
-        content: content
-    };
-
-    fetchAPI("/messages/send", {
-        method: "POST",
-        headers: {
-            "Authorization": "Bearer " + token,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(messageData)
-    })
-        .then(response => {
-            const status = response.status;
-            if (status?.code === "00" && status.success) {
-                // Thêm tin nhắn vừa gửi vào giao diện
-                const chatMessages = document.getElementById("chat-messages");
-                const messageEl = document.createElement("div");
-                messageEl.className = "message-wrapper user";
-                messageEl.innerHTML = `
-                    <div class="message-bubble">
-                        <div class="message-content">${content}</div>
-                        <div class="message-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                    </div>
-                `;
-                chatMessages.appendChild(messageEl);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-                inputField.value = "";
-            } else {
-                alert("Gửi tin nhắn thất bại!");
-            }
-        })
-        .catch(error => {
-            console.error("Lỗi khi gửi tin nhắn:", error.message);
-        });
-}
-
-// Tải đoạn chat và xử lý gửi tin nhắn
-function loadChat(chatId, element, name) {
-    // Đánh dấu đoạn chat đang được chọn
-    document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
-    if (element) element.classList.add('active');
-
-    // Cập nhật header
+    // Cập nhật tiêu đề
     document.getElementById("chat-header").innerHTML = `
         <div class="header-left">
-            <img src="https://via.placeholder.com/40" class="header-avatar" alt="Avatar">
-            <span class="header-name">${name}</span>
+            <img src="${avatarUrl || '/images/default-avatar.jpg'}"
+                 alt="Avatar"
+                 class="chat-avatar"
+                 onerror="this.onerror=null;this.src='/images/default-avatar.jpg';">
+            <span class="header-name">${escapeHTML(name)}</span>
         </div>
         <div class="header-actions">
             <button class="header-btn" onclick="makeCall()"><i class="bi bi-telephone-fill"></i></button>
@@ -70,75 +28,309 @@ function loadChat(chatId, element, name) {
         </div>
     `;
 
-    // Lấy token
-    const token = localStorage.getItem('token');
-    if (!token) {
-        console.error("Thiếu token");
-        return;
-    }
+    // Gán chatId toàn cục
+    window.currentChatId = chatId;
+
+    // Show chat input container
+    const inputContainer = document.getElementById("chat-input-container");
+    inputContainer.classList.add('active');
 
     // Gọi API lấy tin nhắn
-    fetchAPI(`/messages/get-by-conversation?conversationId=${chatId}`, {
-        method: 'POST',
-        headers: {
-            'Authorization': 'Bearer ' + token
-        }
-    })
+    MessageService.getMessagesByConversation(chatId, 0, 50, token)
         .then(result => {
-            const chatMessages = document.getElementById("chat-messages");
-            chatMessages.innerHTML = "";
+            const container = document.getElementById("chat-messages");
+            container.innerHTML = '';
 
             const status = result.status;
-            if (status?.code === "00" && status.success && Array.isArray(result.data)) {
-                result.data.forEach(msg => {
-                    const isUser = msg.senderId === localStorage.getItem('userId');
-                    const messageEl = document.createElement("div");
-                    messageEl.className = "message-wrapper " + (isUser ? "user" : "other");
+            const messages = result.data;
 
-                    messageEl.innerHTML = `
-                        <div class="message-bubble">
-                            <div class="message-content">${msg.content}</div>
-                            <div class="message-time">${new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                        </div>
-                    `;
-                    chatMessages.appendChild(messageEl);
+            if (status?.code === "00" && status.success && Array.isArray(messages)) {
+                if (messages.length === 0) {
+                    container.innerHTML = `<div class="empty-chat">Chưa có tin nhắn nào</div>`;
+                    return;
+                }
+
+                messages.forEach(msg => {
+                    container.appendChild(renderMessage(msg, userId));
                 });
 
-                // Tự động cuộn xuống cuối
-                chatMessages.scrollTop = chatMessages.scrollHeight;
+                container.scrollTop = container.scrollHeight;
             } else {
-                chatMessages.innerHTML = "<div class='message-wrapper other'><div class='message-bubble'>(Không có tin nhắn)</div></div>";
+                container.innerHTML = `<div class="error-chat">Không thể tải tin nhắn</div>`;
+                console.warn("Lỗi khi lấy tin nhắn:", status?.message || "Không rõ lỗi");
             }
         })
-        .catch(error => {
-            console.error("Lỗi khi tải tin nhắn:", error.message);
+        .catch(err => {
+            console.error("Lỗi khi load chat:", err.message);
+            document.getElementById("chat-messages").innerHTML =
+                `<div class="error-chat">Không thể kết nối đến máy chủ.</div>`;
         });
+}
 
-    // Giao diện ô nhập và nút gửi
-    const inputContainer = document.getElementById("chat-input-container");
-    inputContainer.innerHTML = `
-        <input type="text" id="chat-input" placeholder="Nhập tin nhắn..." />
-        <button id="chat-send-button"><i class="bi bi-send"></i></button>
+// ========================= RENDER MESSAGE =========================
+function renderMessage(msg, userId) {
+    // Fix: Use msg.senderId instead of msg.sender.senderId
+    const isUser = String(msg.sender.senderId) === String(userId);
+    const wrapper = document.createElement("div");
+    wrapper.className = "message-wrapper " + (isUser ? "user" : "other");
+
+    const time = String(msg.timeAgo);
+
+    let contentHtml = "";
+
+    switch (msg.messageType) {
+        case "TEXT":
+            contentHtml = `<div class="message-text">${escapeHTML(msg.content)}</div>`;
+            break;
+
+        case "IMAGE":
+            if (msg.attachments?.length > 0) {
+                const imagesHtml = msg.attachments.map(att => {
+                    const url = "http://localhost:8885" + att.fileUrl;
+                    return `<img src="${url}" alt="Hình ảnh" class="message-image"
+                                onerror="this.src='images/image-error.png';"/>`;
+                }).join("");
+                contentHtml = `
+                    ${msg.content ? `<div class="message-text">${escapeHTML(msg.content)}</div><br/>` : ""}
+                    <div class="message-images">${imagesHtml}</div>
+                `;
+            } else {
+                contentHtml = `<div class="text-muted">[Không tìm thấy ảnh]</div>`;
+            }
+            break;
+
+        case "VIDEO":
+            if (msg.attachments?.length > 0) {
+                const videosHtml = msg.attachments.map(att => {
+                    const url = "http://localhost:8885" + att.fileUrl;
+                    return `<video controls class="message-video"
+                                   onerror="this.poster='images/video-error.png';">
+                                <source src="${url}" type="video/mp4">
+                                Trình duyệt không hỗ trợ video.
+                            </video>`;
+                }).join("");
+                contentHtml = `
+                    ${msg.content ? `<div class="message-text">${escapeHTML(msg.content)}</div><br/>` : ""}
+                    <div class="message-videos">${videosHtml}</div>
+                `;
+            } else {
+                contentHtml = `<div class="text-muted">[Không tìm thấy video]</div>`;
+            }
+            break;
+
+        case "FILE":
+            if (msg.attachments?.length > 0) {
+                const filesHtml = msg.attachments.map(att => {
+                    const url = "http://localhost:8885" + att.fileUrl;
+                    const fileName = att.fileUrl.split("/").pop();
+                    return `<a href="${url}" target="_blank" class="message-file">
+                                <i class="bi bi-file-earmark-text-fill"></i> ${escapeHTML(fileName)}
+                            </a>`;
+                }).join("<br/>");
+                contentHtml = `
+                    ${msg.content ? `<div class="message-text">${escapeHTML(msg.content)}</div><br/>` : ""}
+                    <div class="message-files">${filesHtml}</div>
+                `;
+            } else {
+                contentHtml = `<div class="text-muted">[Không tìm thấy tệp]</div>`;
+            }
+            break;
+
+        default:
+            contentHtml = msg.content
+                ? `<div class="message-text">${escapeHTML(msg.content)}</div>`
+                : `<div class="text-muted">[Không có nội dung]</div>`;
+            break;
+    }
+
+    const senderAvatar = msg.sender?.avatarSender
+        ? `http://localhost:8885${msg.sender.avatarSender}`
+        : "images/default-avatar.jpg";
+    const senderName = msg.sender?.nameSender || "Unknown";
+
+    // Avatar outside message-bubble; sender name inside for non-user messages
+    const senderInfoHtml = isUser
+        ? ""
+        : `<div class="message-sender">${escapeHTML(senderName)}</div>`;
+
+    wrapper.innerHTML = `
+        <div class="message-avatar">
+            <img src="${senderAvatar}" alt="Avatar" class="avatar-image"
+                 onerror="this.src='images/default-avatar.jpg';"/>
+        </div>
+        <div class="message-bubble">
+            ${senderInfoHtml}
+            <div class="message-content">${contentHtml}</div>
+            <div class="message-time">${time}</div>
+        </div>
     `;
 
-    const sendButton = document.getElementById("chat-send-button");
-    const inputField = document.getElementById("chat-input");
+    return wrapper;
+}
 
-    // Gửi bằng click
-    sendButton.addEventListener('click', () => {
-        if (inputField.value.trim() !== "") {
-            sendMessage(chatId);
+// ========================= SEND MESSAGE =========================
+async function sendMessage(chatId) {
+    const input = document.getElementById("chat-input");
+    const fileInput = document.getElementById("chat-file");
+
+    const content = input.value.trim();
+    const files = fileInput.files;
+
+    if (!content && (!files || files.length === 0)) return;
+    if (!chatId) return;
+
+    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
+
+    const formData = new FormData();
+    formData.append("conversationId", chatId);
+    formData.append("senderId", userId);
+
+    if (content) formData.append("content", content);
+
+    const hasFiles = files && files.length > 0;
+
+    // Xác định loại message
+    let messageType = "TEXT";
+    if (hasFiles) {
+        const fileTypes = Array.from(files).map(file => file.type);
+        const allImages = fileTypes.every(type => type.startsWith("image/"));
+        const allVideos = fileTypes.every(type => type.startsWith("video/"));
+
+        if (allImages) {
+            messageType = "IMAGE";
+        } else if (allVideos) {
+            messageType = "VIDEO";
+        } else {
+            messageType = "FILE";
         }
-    });
 
-    // Gửi bằng Enter, xuống dòng khi Shift+Enter
-    inputField.addEventListener('keydown', (e) => {
-        if (e.key === "Enter") {
-            if (e.shiftKey) return; // cho phép xuống dòng
-            e.preventDefault(); // ngăn Enter gửi form
-            if (inputField.value.trim() !== "") {
+        for (let file of files) {
+            formData.append("files", file);
+        }
+    }
+
+    formData.append("messageType", messageType);
+
+    try {
+        const response = await MessageService.sendMessage(formData, token);
+        const status = response?.status;
+
+        if (status?.code === "00" && status.success) {
+            const container = document.getElementById("chat-messages");
+
+            const messageEl = document.createElement("div");
+            messageEl.className = "message-wrapper user";
+
+            let fileHtml = "";
+            if (hasFiles) {
+                for (let file of files) {
+                    const url = URL.createObjectURL(file);
+                    const type = file.type;
+
+                    if (type.startsWith("image/")) {
+                        fileHtml += `<img src="${url}" class="message-image" />`;
+                    } else if (type.startsWith("video/")) {
+                        fileHtml += `<video controls src="${url}" class="message-video"></video>`;
+                    } else {
+                        fileHtml += `<a href="${url}" target="_blank">${escapeHTML(file.name)}</a>`;
+                    }
+                }
+            }
+
+            messageEl.innerHTML = `
+                <div class="message-avatar">
+                    <img src="images/default-avatar.jpg" alt="Avatar" class="avatar-image"
+                         onerror="this.src='images/default-avatar.jpg';"/>
+                </div>
+                <div class="message-bubble">
+                    <div class="message-content">
+                        ${content ? escapeHTML(content) + "<br/>" : ""}
+                        ${fileHtml}
+                    </div>
+                    <div class="message-time">${new Date().toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit'
+            })}</div>
+                </div>
+            `;
+
+            container.appendChild(messageEl);
+            container.scrollTop = container.scrollHeight;
+
+            // Reset input
+            input.value = "";
+            fileInput.value = "";
+        } else {
+            alert("Gửi tin nhắn thất bại: " + (status?.message || "Không rõ lý do"));
+        }
+    } catch (err) {
+        console.error("Lỗi khi gửi tin nhắn:", err);
+        alert("Có lỗi xảy ra khi gửi tin nhắn.");
+    }
+}
+
+// ========================= INPUT UI INIT =========================
+const inputContainer = document.getElementById("chat-input-container");
+inputContainer.innerHTML = `
+    <input type="file" id="chat-file" multiple style="display: none;"/>
+    <button id="file-upload-button" title="Gửi file"><i class="bi bi-paperclip"></i></button>
+    <input type="text" id="chat-input" placeholder="Nhập tin nhắn..."/>
+    <button id="chat-send-button"><i class="bi bi-send"></i></button>
+`;
+
+document.getElementById("file-upload-button").addEventListener("click", () => {
+    document.getElementById("chat-file").click();
+});
+
+// ========================= GỬI TIN NHẮN =========================
+document.addEventListener("DOMContentLoaded", () => {
+    const inputContainer = document.getElementById("chat-input-container");
+    if (inputContainer) {
+        inputContainer.classList.remove('active'); // Ensure input is hidden initially
+        inputContainer.innerHTML = `
+            <input type="file" id="chat-file" multiple style="display: none;"/>
+            <button id="file-upload-button" title="Gửi file"><i class="bi bi-paperclip"></i></button>
+            <input type="text" id="chat-input" placeholder="Nhập tin nhắn..."/>
+            <button id="chat-send-button"><i class="bi bi-send"></i></button>
+        `;
+
+        // Gán sự kiện
+        document.getElementById("file-upload-button").addEventListener("click", () => {
+            document.getElementById("chat-file").click();
+        });
+
+        const sendButton = document.getElementById("chat-send-button");
+        const inputField = document.getElementById("chat-input");
+
+        sendButton.addEventListener('click', () => {
+            const chatId = window.currentChatId;
+            if ((inputField.value.trim() !== "" || document.getElementById("chat-file").files.length > 0) && chatId) {
                 sendMessage(chatId);
             }
-        }
-    });
+        });
+
+        inputField.addEventListener('keydown', (e) => {
+            if (e.key === "Enter") {
+                if (e.shiftKey) return; // xuống dòng
+                e.preventDefault();
+                const chatId = window.currentChatId;
+                if ((inputField.value.trim() !== "" || document.getElementById("chat-file").files.length > 0) && chatId) {
+                    sendMessage(chatId);
+                }
+            }
+        });
+    }
+});
+
+
+function escapeHTML(str) {
+    if (!str) return '';
+    return str.replace(/[&<>"']/g, tag => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[tag] || tag));
 }
