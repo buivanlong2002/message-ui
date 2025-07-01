@@ -1,407 +1,77 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TomoTalk - Đăng nhập</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"/>
-
-  <style>
-    :root {
-      --primary-color: #3b82f6;
-      --primary-hover-color: #2563eb;
-      --error-color: #ef4444;
-      --text-dark: #1e293b;
-      --text-light: #64748b;
-      --border-color: #d1d5db;
-      --background-light: #f8fafc;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      font-family: 'Be Vietnam Pro', sans-serif;
-      color: var(--text-dark);
-      background-color: var(--background-light);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 1rem;
-    }
-
-    #auth-wrapper {
-      display: flex;
-      width: 100%;
-      max-width: 960px;
-      min-height: 600px;
-      background: #fff;
-      box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.1);
-      border-radius: 16px;
-      overflow: hidden;
-    }
-
-    #branding-side {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 3rem;
-      text-align: center;
-      position: relative;
-      background: url('bg1.jpg') center/cover no-repeat;
-      color: #1e3a8a;
-      overflow: hidden;
-    }
-
-    #particles-js {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      z-index: 0;
-    }
-
-    .branding-content {
-      position: relative;
-      z-index: 1;
-    }
-
-    .branding-content .logo {
-      width: 200px;
-      height: 200px;
-      object-fit: cover;
-      border-radius: 50%;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-      margin-bottom: 1.5rem;
-      animation: logoFade 1s ease forwards;
-    }
-
-    @keyframes logoFade {
-      from { opacity: 0; transform: scale(0.85); }
-      to { opacity: 1; transform: scale(1); }
-    }
-
-    .branding-content p {
-      font-size: 1.1rem;
-      max-width: 350px;
-      opacity: 0;
-      animation: fadeIn 1s ease 0.4s forwards;
-      color: white;
-    }
-
-    @keyframes fadeIn {
-      to { opacity: 1; }
-    }
-
-    #form-side {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 3rem 2rem;
-      position: relative;
-    }
-
-    .form-container {
-      width: 100%;
-      max-width: 360px;
-      position: absolute;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(20px);
-      transition: opacity 0.4s ease, transform 0.4s ease;
-    }
-
-    .form-container.active {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
-
-    .form-container h2 {
-      font-size: 1.75rem;
-      font-weight: 700;
-      text-align: center;
-      margin-bottom: 0.75rem;
-    }
-
-    .form-container .subtitle {
-      text-align: center;
-      color: var(--text-light);
-      margin-bottom: 2rem;
-    }
-
-    .input-group {
-      position: relative;
-      margin-bottom: 1.5rem;
-    }
-
-    .input-group i {
-      position: absolute;
-      left: 15px;
-      top: 14px;
-      color: var(--text-light);
-      transition: color 0.3s ease;
-    }
-
-    .input-group .icon-eye {
-      right: 15px;
-      left: auto;
-      cursor: pointer;
-    }
-
-    .form-container input {
-      width: 100%;
-      height: 48px;
-      padding: 0 1rem 0 2.5rem;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      font-size: 1rem;
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .input-group:focus-within i {
-      color: var(--primary-color);
-    }
-
-    .form-container input:focus {
-      outline: none;
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-    }
-
-    .input-group.error input {
-      border-color: var(--error-color);
-    }
-
-    .input-group.error i {
-      color: var(--error-color);
-    }
-
-    .error-text {
-      color: var(--error-color);
-      font-size: 0.8rem;
-      padding-left: 5px;
-      display: none;
-    }
-
-    .form-options {
-      display: flex;
-      justify-content: flex-end;
-      font-size: 0.875rem;
-      margin-top: -1rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .form-options a {
-      color: var(--primary-color);
-      font-weight: 500;
-      text-decoration: none;
-      cursor: pointer;
-      transition: color 0.3s, text-decoration 0.3s;
-    }
-
-    .form-options a:hover {
-      color: var(--primary-hover-color);
-      text-decoration: underline;
-    }
-
-    .btn-primary {
-      width: 100%;
-      padding: 0.85rem;
-      background: var(--primary-color);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 500;
-      cursor: pointer;
-      box-shadow: 0 4px 15px -5px rgba(59, 130, 246, 0.6);
-      transition: background 0.3s, transform 0.2s, box-shadow 0.2s;
-    }
-
-    .btn-primary:hover {
-      background: var(--primary-hover-color);
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px -5px rgba(59, 130, 246, 0.4);
-    }
-
-    .btn-primary:active {
-      transform: translateY(-1px);
-    }
-
-    .switch-auth {
-      margin-top: 2rem;
-      text-align: center;
-      font-size: 0.9rem;
-      color: var(--text-light);
-    }
-
-    .switch-auth a {
-      color: var(--primary-color);
-      text-decoration: none;
-      font-weight: 500;
-      cursor: pointer;
-    }
-
-    .switch-auth a:hover {
-      color: var(--primary-hover-color);
-      text-decoration: underline;
-    }
-
-    @media (max-width: 850px) {
-      #auth-wrapper {
-        flex-direction: column;
-        min-height: 100vh;
-        border-radius: 0;
-      }
-
-      #branding-side {
-        height: 250px;
-        padding: 1.5rem;
-      }
-
-      .branding-content .logo {
-        width: 120px;
-        height: 120px;
-      }
-
-      #form-side {
-        padding: 2rem 1rem;
-      }
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Chào mừng đến với TomoTalk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <link rel="stylesheet" href="./css/auth.css">
 </head>
 <body>
 <div id="auth-wrapper">
   <div id="branding-side">
     <div id="particles-js"></div>
     <div class="branding-content">
-      <img class="logo" src="LogoTomoTalk.jpg" alt="TomoTalk Logo">
+      <img class="logo" src="images/LogoTomoTalk.jpg" alt="TomoTalk Logo">
       <p>Kết nối bạn bè, khám phá thế giới qua từng cuộc trò chuyện.</p>
     </div>
   </div>
 
   <div id="form-side">
-    <div id="login-container" class="form-container active">
+    <div id="login-container" class="form-container">
       <h2>Chào mừng trở lại!</h2>
       <p class="subtitle">Đăng nhập để tiếp tục hành trình của bạn.</p>
-
-      <div class="input-group" id="username-group">
-        <i class="fa-solid fa-envelope"></i>
-        <input type="text" id="username" placeholder="Email" required />
-        <span class="error-text" id="username-error"></span>
-      </div>
-
-      <div class="input-group" id="password-group">
-        <i class="fa-solid fa-lock"></i>
-        <input type="password" id="password" placeholder="Mật khẩu" required />
-        <i class="fa-solid fa-eye icon-eye" onclick="togglePasswordVisibility('password')"></i>
-        <span class="error-text" id="password-error"></span>
-      </div>
-
-      <div class="form-options">
-        <a onclick="alert('Chuyển đến chức năng quên mật khẩu')">Quên mật khẩu?</a>
-      </div>
-
-      <button class="btn-primary" onclick="handleLogin()">Đăng nhập</button>
-
+      <form id="login-form">
+        <div class="input-group" id="username-group">
+          <i class="fa-solid fa-envelope"></i>
+          <input type="text" id="email" placeholder="Email hoặc Tên đăng nhập" required>
+          <span class="error-text" id="username-error"></span>
+        </div>
+        <div class="input-group" id="password-group">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" id="password" placeholder="Mật khẩu" required>
+          <i class="fa-solid fa-eye icon-eye" onclick="togglePasswordVisibility('password')"></i>
+          <span class="error-text" id="password-error"></span>
+        </div>
+        <div class="error-text" id="login-error"></div>
+        <div class="form-options">
+          <a onclick="switchForm('forgot-container')">Quên mật khẩu?</a>
+        </div>
+        <button type="submit" class="btn-primary">Đăng nhập</button>
+      </form>
       <div class="switch-auth">
-        Chưa có tài khoản? <a onclick="alert('Chuyển sang giao diện đăng ký')">Đăng ký ngay</a>
+        Chưa có tài khoản? <a onclick="switchForm('register-container')">Đăng ký ngay</a>
       </div>
+    </div>
+
+    <div id="register-container" class="form-container">
+      <h2>Tạo tài khoản mới</h2>
+      <p class="subtitle">Tham gia cộng đồng TomoTalk ngay hôm nay!</p>
+      <div class="input-group"><i class="fa-solid fa-user"></i><input type="text" id="reg-username" placeholder="Tên hiển thị" required></div>
+      <div class="input-group"><i class="fa-solid fa-envelope"></i><input type="email" id="reg-email" placeholder="Email của bạn" required></div>
+      <div class="input-group"><i class="fa-solid fa-lock"></i><input type="password" id="reg-password" placeholder="Mật khẩu" required><i class="fa-solid fa-eye icon-eye" onclick="togglePasswordVisibility('reg-password')"></i></div>
+      <button type="button" class="btn-primary" onclick="handleRegister()">Đăng ký</button>
+      <div class="switch-auth">
+        Đã có tài khoản? <a onclick="switchForm('login-container')">Quay lại đăng nhập</a>
+      </div>
+    </div>
+    <div id="forgot-container" class="form-container">
+      <h2>Quên mật khẩu</h2>
+      <p class="subtitle">Nhập email để nhận hướng dẫn lấy lại mật khẩu.</p>
+      <div class="input-group"><i class="fa-solid fa-envelope"></i><input type="email" id="forgot-email" placeholder="Nhập email của bạn" required></div>
+      <button type="button" class="btn-primary" onclick="handleForgotPassword()">Gửi yêu cầu</button>
+      <div class="switch-auth"><a onclick="switchForm('login-container')">Quay lại đăng nhập</a></div>
     </div>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
-<script>
-  particlesJS("particles-js", {
-    particles: {
-      number: { value: 60, density: { enable: true, value_area: 800 } },
-      color: { value: "#ffffff" },
-      shape: { type: "circle" },
-      opacity: { value: 0.5, random: true },
-      size: { value: 3, random: true },
-      line_linked: {
-        enable: true,
-        distance: 150,
-        color: "#ffffff",
-        opacity: 0.4,
-        width: 1,
-      },
-      move: {
-        enable: true,
-        speed: 2,
-        direction: "none",
-        random: false,
-        straight: false,
-        out_mode: "out",
-      },
-    },
-    interactivity: {
-      detect_on: "canvas",
-      events: {
-        onhover: { enable: true, mode: "repulse" },
-        onclick: { enable: true, mode: "push" },
-      },
-      modes: {
-        repulse: { distance: 100, duration: 0.4 },
-        push: { particles_nb: 4 },
-      },
-    },
-    retina_detect: true,
-  });
+<script src="controller/api.js"></script>
+<script src="controller/auth.js"></script>
 
-  function togglePasswordVisibility(inputId) {
-    const input = document.getElementById(inputId);
-    const icon = input.nextElementSibling;
-    if (input.type === "password") {
-      input.type = "text";
-      icon.classList.remove("fa-eye");
-      icon.classList.add("fa-eye-slash");
-    } else {
-      input.type = "password";
-      icon.classList.remove("fa-eye-slash");
-      icon.classList.add("fa-eye");
-    }
-  }
-
-  function handleLogin() {
-    const username = document.getElementById('username');
-    const password = document.getElementById('password');
-    const usernameError = document.getElementById('username-error');
-    const passwordError = document.getElementById('password-error');
-
-    document.getElementById('username-group').classList.remove('error');
-    document.getElementById('password-group').classList.remove('error');
-    usernameError.style.display = 'none';
-    passwordError.style.display = 'none';
-
-    if (!username.value.trim()) {
-      usernameError.textContent = 'Vui lòng nhập tên đăng nhập.';
-      usernameError.style.display = 'block';
-      document.getElementById('username-group').classList.add('error');
-    }
-
-    if (!password.value.trim()) {
-      passwordError.textContent = 'Vui lòng nhập mật khẩu.';
-      passwordError.style.display = 'block';
-      document.getElementById('password-group').classList.add('error');
-    }
-
-    if (username.value === 'admin' && password.value === 'password') {
-      alert('Đăng nhập thành công!');
-    } else {
-      passwordError.textContent = 'Tên đăng nhập hoặc mật khẩu không hợp lệ.';
-      passwordError.style.display = 'block';
-      document.getElementById('username-group').classList.add('error');
-      document.getElementById('password-group').classList.add('error');
-    }
-  }
-</script>
 </body>
 </html>
