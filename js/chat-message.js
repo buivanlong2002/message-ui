@@ -51,7 +51,9 @@ function loadChat(chatId, element, name, avatarUrl) {
                 }
 
                 messages.forEach(msg => {
-                    container.appendChild(renderMessage(msg, userId));
+                    const messageEl = renderMessage(msg, userId);
+                    messageEl.setAttribute('data-message-id', msg.id);
+                    container.appendChild(messageEl);
                 });
 
                 container.scrollTop = container.scrollHeight;
@@ -69,20 +71,19 @@ function loadChat(chatId, element, name, avatarUrl) {
 
 // ========================= RENDER MESSAGE =========================
 function renderMessage(msg, userId) {
-    // Fix: Use msg.senderId instead of msg.sender.senderId
+    // Kiểm tra xem tin nhắn có phải của người dùng hiện tại không
     const isUser = String(msg.sender.senderId) === String(userId);
     const wrapper = document.createElement("div");
     wrapper.className = "message-wrapper " + (isUser ? "user" : "other");
 
     const time = String(msg.timeAgo);
-
     let contentHtml = "";
 
+    // Xử lý các loại tin nhắn
     switch (msg.messageType) {
         case "TEXT":
             contentHtml = `<div class="message-text">${escapeHTML(msg.content)}</div>`;
             break;
-
         case "IMAGE":
             if (msg.attachments?.length > 0) {
                 const imagesHtml = msg.attachments.map(att => {
@@ -98,7 +99,6 @@ function renderMessage(msg, userId) {
                 contentHtml = `<div class="text-muted">[Không tìm thấy ảnh]</div>`;
             }
             break;
-
         case "VIDEO":
             if (msg.attachments?.length > 0) {
                 const videosHtml = msg.attachments.map(att => {
@@ -117,7 +117,6 @@ function renderMessage(msg, userId) {
                 contentHtml = `<div class="text-muted">[Không tìm thấy video]</div>`;
             }
             break;
-
         case "FILE":
             if (msg.attachments?.length > 0) {
                 const filesHtml = msg.attachments.map(att => {
@@ -135,7 +134,6 @@ function renderMessage(msg, userId) {
                 contentHtml = `<div class="text-muted">[Không tìm thấy tệp]</div>`;
             }
             break;
-
         default:
             contentHtml = msg.content
                 ? `<div class="message-text">${escapeHTML(msg.content)}</div>`
@@ -148,10 +146,20 @@ function renderMessage(msg, userId) {
         : "images/default-avatar.jpg";
     const senderName = msg.sender?.nameSender || "Unknown";
 
-    // Avatar outside message-bubble; sender name inside for non-user messages
     const senderInfoHtml = isUser
         ? ""
         : `<div class="message-sender">${escapeHTML(senderName)}</div>`;
+
+    // Thêm menu ngữ cảnh
+    const contextMenuHtml = `
+        <div class="message-context-menu">
+            <ul>
+                <li onclick="replyMessage('${msg.id}')"><i class="bi bi-reply-fill"></i> Trả lời</li>
+                <li onclick="forwardMessage('${msg.id}')"><i class="bi bi-arrow-right-circle-fill"></i> Chuyển tiếp</li>
+                ${isUser ? `<li onclick="recallMessage('${msg.id}')"><i class="bi bi-trash-fill"></i> Thu hồi</li>` : ""}
+            </ul>
+        </div>
+    `;
 
     wrapper.innerHTML = `
         <div class="message-avatar">
@@ -162,6 +170,7 @@ function renderMessage(msg, userId) {
             ${senderInfoHtml}
             <div class="message-content">${contentHtml}</div>
             <div class="message-time">${time}</div>
+            ${contextMenuHtml}
         </div>
     `;
 
@@ -172,6 +181,7 @@ function renderMessage(msg, userId) {
 async function sendMessage(chatId) {
     const input = document.getElementById("chat-input");
     const fileInput = document.getElementById("chat-file");
+    const replyId = input.getAttribute("data-reply-id");
 
     const content = input.value.trim();
     const files = fileInput.files;
@@ -187,10 +197,9 @@ async function sendMessage(chatId) {
     formData.append("senderId", userId);
 
     if (content) formData.append("content", content);
+    if (replyId) formData.append("replyToId", replyId);
 
     const hasFiles = files && files.length > 0;
-
-    // Xác định loại message
     let messageType = "TEXT";
     if (hasFiles) {
         const fileTypes = Array.from(files).map(file => file.type);
@@ -252,14 +261,24 @@ async function sendMessage(chatId) {
                 hour: '2-digit',
                 minute: '2-digit'
             })}</div>
+                    <div class="message-context-menu">
+                        <ul>
+                            <li onclick="replyMessage('${response.data.id}')"><i class="bi bi-reply-fill"></i> Trả lời</li>
+                            <li onclick="forwardMessage('${response.data.id}')"><i class="bi bi-arrow-right-circle-fill"></i> Chuyển tiếp</li>
+                            <li onclick="recallMessage('${response.data.id}')"><i class="bi bi-trash-fill"></i> Thu hồi</li>
+                        </ul>
+                    </div>
                 </div>
             `;
+            messageEl.setAttribute('data-message-id', response.data.id);
 
             container.appendChild(messageEl);
             container.scrollTop = container.scrollHeight;
 
             // Reset input
             input.value = "";
+            input.removeAttribute("data-reply-id");
+            input.placeholder = "Nhập tin nhắn...";
             fileInput.value = "";
         } else {
             alert("Gửi tin nhắn thất bại: " + (status?.message || "Không rõ lý do"));
@@ -323,6 +342,41 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+// ========================= XỬ LÝ MENU NGỮ CẢNH =========================
+function replyMessage(messageId) {
+    const inputField = document.getElementById("chat-input");
+    inputField.setAttribute("data-reply-id", messageId);
+    inputField.placeholder = `Trả lời tin nhắn ${messageId}...`;
+    inputField.focus();
+}
+
+function forwardMessage(messageId) {
+    alert(`Chuyển tiếp tin nhắn ${messageId}`);
+    // TODO: Thêm logic để mở modal chọn người nhận và gửi tin nhắn
+}
+
+async function recallMessage(messageId) {
+    const token = localStorage.getItem("token");
+    try {
+        // Giả sử bạn có API để thu hồi tin nhắn
+        const response = await MessageService.recallMessage(messageId, token);
+        if (response.status.code === "00" && response.status.success) {
+            const messageElement = document.querySelector(`.message-wrapper[data-message-id="${messageId}"]`);
+            if (messageElement) {
+                messageElement.innerHTML = `
+                    <div class="message-bubble">
+                        <div class="message-content text-muted">[Tin nhắn đã được thu hồi]</div>
+                    </div>
+                `;
+            }
+        } else {
+            alert("Thu hồi tin nhắn thất bại: " + (response.status.message || "Không rõ lý do"));
+        }
+    } catch (err) {
+        console.error("Lỗi khi thu hồi tin nhắn:", err);
+        alert("Có lỗi xảy ra khi thu hồi tin nhắn.");
+    }
+}
 
 function escapeHTML(str) {
     if (!str) return '';
