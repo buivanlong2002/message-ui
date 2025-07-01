@@ -4,36 +4,1022 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Giao diện Chat - TomoTalk</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="./css/style.css"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
+    <style>
+        /* Reset mặc định và thiết lập font chữ toàn cục */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #1e293b;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            line-height: 1.5;
+        }
+
+        /* Container chính chứa sidebar và nội dung chat */
+        #container {
+            display: flex;
+            height: calc(100vh - 20px);
+            width: calc(100% - 25px);
+            background: #ffffff;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 10px;
+        }
+
+        /* Sidebar chứa danh sách chat */
+        #sidebar {
+            width: 340px;
+            background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+            border-right: 1px solid #d1d5db;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        /* Phần trên của sidebar với nút menu và ô tìm kiếm */
+        #sidebar-top {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        /* Icon menu sidebar */
+        .bi-list {
+            font-size: 1.8rem;
+            margin-right: 12px;
+            cursor: pointer;
+            color: #4f46e5;
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+
+        .bi-list:hover {
+            color: #4338ca;
+            transform: rotate(90deg) scale(1.1);
+        }
+
+        /* Ô tìm kiếm */
+        #search-box {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 24px;
+            font-size: 14px;
+            background: #f9fafb;
+            color: #1e293b;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+        }
+
+        #search-box:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 8px rgba(79, 70, 229, 0.2);
+            transform: translateY(-1px);
+        }
+
+        /* Danh sách chat */
+        #chat-list {
+            overflow-y: auto;
+            flex: 1;
+            margin-top: 10px;
+            scrollbar-width: thin;
+            scrollbar-color: #d1d5db #ffffff;
+        }
+
+        /* Mỗi item trong danh sách chat */
+        .chat-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            background: #ffffff;
+            margin-bottom: 8px;
+            transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .chat-item:hover {
+            background: #e5e7eb;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-item.active {
+            background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
+        }
+
+        /* Avatar của chat */
+        .chat-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 12px;
+            object-fit: cover;
+            border: 2px solid #e5e7eb;
+            transition: transform 0.3s ease;
+        }
+
+        .chat-avatar:hover {
+            transform: scale(1.05);
+        }
+
+        /* Tên và preview của chat */
+        .chat-name {
+            font-weight: 600;
+            font-size: 15px;
+            color: #1e293b;
+        }
+
+        .chat-preview {
+            font-size: 13px;
+            color: #6b7280;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-time {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        /* Nội dung chat chính */
+        #chat-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f9fafb;
+        }
+
+        /* Header của khu vực chat */
+        #chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background: linear-gradient(90deg, #ffffff 0%, #f1f5f9 100%);
+            border-bottom: 1px solid #d1d5db;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Phần bên trái của header (avatar và tên) */
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #e5e7eb;
+            transition: transform 0.3s ease;
+        }
+
+        .header-avatar:hover {
+            transform: scale(1.05);
+        }
+
+        .header-name {
+            font-weight: 600;
+            font-size: 17px;
+            color: #1e293b;
+        }
+
+        /* Các nút hành động trong header */
+        .header-actions {
+            display: flex;
+            gap: 14px;
+        }
+
+        .header-btn {
+            background: transparent;
+            border: none;
+            color: #4f46e5;
+            font-size: 20px;
+            cursor: pointer;
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+
+        .header-btn:hover {
+            color: #4338ca;
+            transform: scale(1.1);
+        }
+
+        /* Khu vực chat và profile */
+        .chat-and-profile {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            transition: flex 0.3s ease;
+        }
+
+        .chat-area.split {
+            flex: 0 0 calc(100% - 340px);
+        }
+
+        /* Khu vực hiển thị tin nhắn */
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            scrollbar-width: thin;
+            scrollbar-color: #d1d5db #f9fafb;
+        }
+
+        /* Wrapper cho mỗi tin nhắn */
+        .message-wrapper {
+            display: flex;
+            margin-bottom: 12px;
+            max-width: 85%;
+            align-items: flex-start;
+            position: relative;
+        }
+
+        .message-wrapper.user {
+            align-self: flex-end;
+            justify-content: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message-wrapper.other {
+            align-self: flex-start;
+            justify-content: flex-start;
+        }
+
+        /* Khung tin nhắn */
+        .message-bubble {
+            padding: 14px 18px;
+            border-radius: 20px;
+            max-width: 100%;
+            word-wrap: break-word;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            font-size: 15px;
+            position: relative;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .message-wrapper.user .message-bubble {
+            background: linear-gradient(135deg, #4f46e5 0%, #818cf8 100%);
+            color: #ffffff;
+            border-bottom-right-radius: 6px;
+        }
+
+        .message-wrapper.other .message-bubble {
+            background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+            color: #1e293b;
+            border-bottom-left-radius: 6px;
+        }
+
+        .message-bubble:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Thời gian tin nhắn */
+        .message-time {
+            font-size: 12px;
+            text-align: right;
+            margin-top: 6px;
+            color: #6b7280;
+            opacity: 0.9;
+        }
+
+        /* Hình ảnh và video trong tin nhắn */
+        .message-image,
+        .message-video {
+            max-width: 240px;
+            margin-top: 8px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            transition: transform 0.3s ease;
+        }
+
+        .message-image:hover,
+        .message-video:hover {
+            transform: scale(1.02);
+        }
+
+        /* Avatar của người gửi */
+        .message-avatar {
+            width: 42px;
+            margin-right: 10px;
+        }
+
+        .message-wrapper.user .message-avatar {
+            margin-right: 0;
+            margin-left: 10px;
+        }
+
+        .avatar-image {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #e5e7eb;
+            transition: transform 0.3s ease;
+        }
+
+        .avatar-image:hover {
+            transform: scale(1.05);
+        }
+
+        /* Tên người gửi trong tin nhắn */
+        .message-sender {
+            font-weight: 600;
+            font-size: 14px;
+            color: #1e293b;
+        }
+
+        /* Nội dung tin nhắn */
+        .message-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .message-content-text {
+            word-wrap: break-word;
+            margin-bottom: 4px;
+        }
+
+        .message-images,
+        .message-videos,
+        .message-files {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        /* File đính kèm */
+        .message-file {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #4f46e5;
+            text-decoration: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: #f1f5f9;
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+
+        .message-file:hover {
+            background: #e5e7eb;
+            transform: translateX(4px);
+        }
+
+        .message-file i {
+            font-size: 16px;
+        }
+
+        /* Khu vực nhập tin nhắn */
+        .chat-input-container {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 20px;
+            background: linear-gradient(90deg, #ffffff 0%, #f1f5f9 100%);
+            border-top: 1px solid #d1d5db;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .chat-input-container.active {
+            display: flex;
+        }
+
+        /* Ô nhập tin nhắn */
+        #chat-input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 1px solid #d1d5db;
+            border-radius: 24px;
+            font-size: 15px;
+            color: #1e293b;
+            background: #f9fafb;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+        }
+
+        #chat-input:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 8px rgba(79, 70, 229, 0.2);
+            transform: translateY(-1px);
+        }
+
+        /* Nút gửi tin nhắn */
+        #chat-send-button {
+            margin-left: 10px;
+            background: #4f46e5;
+            border: none;
+            padding: 12px;
+            border-radius: 50%;
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 18px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        #chat-send-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        /* Menu ngữ cảnh cho tin nhắn */
+        .message-context-menu {
+            display: none;
+            position: absolute;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+            min-width: 120px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        /* Hiển thị menu khi hover vào message-wrapper */
+        .message-wrapper:hover .message-context-menu {
+            display: block;
+        }
+
+        /* Danh sách các mục trong menu */
+        .message-context-menu ul {
+            list-style: none;
+            padding: 8px 0;
+        }
+
+        /* Mỗi mục trong menu */
+        .message-context-menu li {
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #1e293b;
+            transition: background 0.2s ease;
+        }
+
+        /* Hiệu ứng hover cho mục menu */
+        .message-context-menu li:hover {
+            background: #e5e7eb;
+        }
+
+        /* Icon trong mục menu */
+        .message-context-menu li i {
+            margin-right: 8px;
+        }
+
+        /* Định vị menu cho tin nhắn của người dùng */
+        .message-wrapper.user .message-context-menu {
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Định vị menu cho tin nhắn của người khác */
+        .message-wrapper.other .message-context-menu {
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Hiệu ứng fadeIn cho menu */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Menu dropdown cho sidebar */
+        .menu-dropdown {
+            display: none;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            position: absolute;
+            top: 70px;
+            left: 20px;
+            z-index: 100;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .menu-dropdown ul {
+            list-style: none;
+            padding: 12px 0;
+        }
+
+        .menu-dropdown li {
+            padding: 12px 24px;
+            cursor: pointer;
+            font-size: 15px;
+            color: #1e293b;
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+
+        .menu-dropdown li:hover {
+            background: #e5e7eb;
+            transform: translateX(5px);
+        }
+
+        /* Overlay cho menu */
+        .menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Nội dung menu */
+        .menu-content {
+            background: #ffffff;
+            border-radius: 16px;
+            width: 420px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+            padding: 24px;
+            position: relative;
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        /* Nút đóng menu */
+        .menu-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: transparent;
+            border: none;
+            font-size: 26px;
+            color: #1e293b;
+            cursor: pointer;
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+
+        .menu-close:hover {
+            color: #4f46e5;
+            transform: rotate(90deg);
+        }
+
+        .menu-section-content {
+            padding: 12px;
+        }
+
+        .menu-section {
+            display: none;
+        }
+
+        .menu-section h2 {
+            font-size: 22px;
+            margin-bottom: 12px;
+            color: #1e293b;
+        }
+
+        .menu-section p {
+            font-size: 15px;
+            color: #6b7280;
+        }
+
+        /* Nút đăng xuất */
+        #confirm-logout {
+            margin-top: 12px;
+            padding: 10px 20px;
+            background: #4f46e5;
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+
+        #confirm-logout:hover {
+            background: #4338ca;
+            transform: translateY(-2px);
+        }
+
+        /* Nội dung profile */
+        .profile-content {
+            width: 340px;
+            background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+            border-left: 1px solid #d1d5db;
+            overflow-y: auto;
+            padding: 24px;
+            scrollbar-width: thin;
+            scrollbar-color: #d1d5db #ffffff;
+            display: none;
+            animation: slideRight 0.3s ease;
+        }
+
+        .profile-content.active {
+            display: block;
+        }
+
+        @keyframes slideRight {
+            from { transform: translateX(20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Header của profile */
+        .profile-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        /* Nút đóng profile */
+        .profile-close {
+            background: transparent;
+            border: none;
+            font-size: 26px;
+            color: #1e293b;
+            cursor: pointer;
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+
+        .profile-close:hover {
+            color: #4f46e5;
+            transform: rotate(90deg);
+        }
+
+        .profile-content h2 {
+            font-size: 22px;
+            color: #1e293b;
+        }
+
+        .profile-content ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .profile-content li {
+            display: flex;
+            align-items: center;
+            padding: 14px 24px;
+            cursor: pointer;
+            font-size: 16px;
+            color: #1e293b;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            background: #ffffff;
+            transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .profile-content li:hover {
+            background: #e5e7eb;
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-content li i {
+            margin-right: 12px;
+            font-size: 20px;
+            color: #4f46e5;
+            transition: transform 0.3s ease;
+        }
+
+        .profile-content li:hover i {
+            transform: scale(1.1);
+        }
+
+        /* Thông báo khi không có tin nhắn hoặc lỗi */
+        .empty-chat, .error-chat {
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+            padding: 24px;
+            background: #f9fafb;
+            border-radius: 12px;
+            margin: 20px;
+        }
+
+        /* Responsive design cho màn hình nhỏ hơn 1024px */
+        @media (max-width: 1024px) {
+            #sidebar {
+                width: 280px;
+            }
+
+            .profile-content {
+                width: 280px;
+            }
+
+            .chat-area.split {
+                flex: 0 0 calc(100% - 280px);
+            }
+
+            .chat-item {
+                padding: 10px;
+            }
+
+            .chat-avatar {
+                width: 44px;
+                height: 44px;
+            }
+
+            .chat-name {
+                font-size: 14px;
+            }
+
+            .chat-preview {
+                font-size: 12px;
+            }
+
+            #chat-header {
+                padding: 12px 16px;
+            }
+
+            .header-avatar {
+                width: 38px;
+                height: 38px;
+            }
+
+            .header-name {
+                font-size: 15px;
+            }
+
+            .menu-content {
+                width: 360px;
+            }
+
+            .profile-content li {
+                padding: 12px 20px;
+                font-size: 15px;
+            }
+        }
+
+        /* Responsive design cho màn hình nhỏ hơn 768px */
+        @media (max-width: 768px) {
+            #container {
+                flex-direction: column;
+                margin: 5px;
+            }
+
+            #sidebar {
+                width: 100%;
+                max-height: 30vh;
+                transform: translateY(0);
+            }
+
+            #chat-content {
+                flex: 1;
+            }
+
+            .chat-area.split {
+                flex: 0 0 100%;
+            }
+
+            .profile-content {
+                width: 100%;
+                position: fixed;
+                top: 0;
+                right: 0;
+                height: 100vh;
+                z-index: 1000;
+                background: #ffffff;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+            }
+
+            .profile-content.active {
+                transform: translateX(0);
+            }
+
+            #chat-messages {
+                padding: 16px;
+            }
+
+            .message-bubble {
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+
+            .message-image,
+            .message-video {
+                max-width: 200px;
+            }
+
+            #chat-input {
+                padding: 10px 14px;
+                font-size: 14px;
+            }
+
+            #chat-send-button {
+                padding: 10px;
+                font-size: 16px;
+            }
+
+            .menu-content {
+                width: 90%;
+                max-width: 320px;
+            }
+        }
+
+
+
+        /* === CSS MỚI CHO PROFILE SECTION === */
+
+        /* Cải tiến container chính của profile */
+        .profile-section {
+            max-width: 400px; /* Giới hạn chiều rộng để đẹp hơn trên màn hình lớn */
+            margin: auto;
+            border-radius: 16px; /* Bo góc mềm mại hơn */
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12); /* Bóng đổ đẹp hơn */
+            background-color: #ffffff;
+            font-family: 'Roboto', 'Segoe UI', sans-serif;
+            overflow: hidden; /* Đảm bảo các thành phần con không bị tràn ra ngoài */
+        }
+
+        /* Ảnh bìa */
+        .cover-photo .cover-img {
+            width: 100%;
+            height: 180px; /* Điều chỉnh chiều cao cho cân đối */
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Khu vực thông tin chính */
+        .profile-info {
+            position: relative;
+            text-align: center;
+            padding: 1.5rem;
+            padding-top: 75px; /* Tạo khoảng trống cho avatar */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem; /* Khoảng cách giữa các phần tử */
+        }
+
+        /* Avatar được làm nổi bật hơn */
+        .avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 5px solid #ffffff;
+            object-fit: cover;
+            position: absolute;
+            top: -60px; /* Đẩy avatar lên nửa trên nửa dưới */
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Thêm bóng đổ cho avatar */
+            transition: transform 0.3s ease;
+        }
+        .avatar:hover {
+            transform: translateX(-50%) scale(1.05);
+        }
+
+        /* Tên người dùng */
+        .username {
+            margin-top: 0; /* Bỏ margin-top cũ */
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        /* Bio/Status */
+        .profile-bio {
+            font-style: italic;
+            color: #6b7280;
+            font-size: 0.95rem;
+            max-width: 90%;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Danh sách thông tin chi tiết */
+        .profile-details {
+            list-style: none;
+            padding: 0;
+            width: 100%;
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .profile-details li {
+            display: flex;
+            align-items: center;
+            padding: 12px 5px;
+            font-size: 0.9rem;
+            color: #334155;
+            border-bottom: 1px solid #f1f5f9; /* Đường kẻ ngăn cách mờ */
+        }
+
+        .profile-details li:last-child {
+            border-bottom: none;
+        }
+
+        .profile-details li i {
+            color: #4f46e5;
+            margin-right: 15px;
+            font-size: 1.1rem;
+            width: 24px; /* Giúp các dòng text thẳng hàng */
+            text-align: center;
+        }
+
+        /* Các nút hành động */
+        .profile-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .profile-btn {
+            padding: 10px 24px;
+            border: 1px solid #d1d5db;
+            background-color: #f9fafb;
+            color: #1e293b;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .profile-btn.primary {
+            background-color: #4f46e5;
+            color: #ffffff;
+            border-color: #4f46e5;
+        }
+
+        .profile-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-btn.primary:hover {
+            background-color: #4338ca;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+    </style>
 </head>
 <body>
 <div id="container">
     <!-- Sidebar -->
-    <div id="sidebar">
+    <aside id="sidebar">
         <div id="sidebar-top">
             <i class="bi bi-list" id="menu-toggle"></i>
-            <input type="text" id="search-box" placeholder="Tìm kiếm...">
+            <input type="text" id="search-box" placeholder="Tìm kiếm..."/>
         </div>
-        <div id="sidebar-menu" class="menu-dropdown">
+
+        <nav id="sidebar-menu" class="menu-dropdown">
             <ul>
                 <li data-section="profile">Trang cá nhân</li>
+                <li data-section="friends">Bạn bè</li>
                 <li data-section="security">Bảo mật</li>
                 <li data-section="logout">Đăng xuất</li>
             </ul>
-        </div>
-        <div id="chat-list"></div>
-    </div>
+        </nav>
 
-    <!-- Chat content -->
-    <div id="chat-content">
+        <div id="chat-list"></div>
+    </aside>
+
+    <!-- Main Chat Content -->
+    <main id="chat-content">
         <div id="chat-header"></div>
+
         <div class="chat-and-profile">
-            <div id="chat-area" class="chat-area">
+            <!-- Chat Area -->
+            <section id="chat-area" class="chat-area">
                 <div id="chat-messages" class="chat-messages"></div>
                 <div id="chat-input-container" class="chat-input-container"></div>
-            </div>
-            <div id="profile-content" class="profile-content" style="display: none;">
+            </section>
+
+            <!-- Chat Profile -->
+            <aside id="profile-content" class="profile-content" style="display: none;">
                 <div class="profile-header">
                     <button id="profile-close" class="profile-close">×</button>
                     <h2>Thông tin cuộc trò chuyện</h2>
@@ -46,124 +1032,157 @@
                     <li data-action="links"><i class="bi bi-link"></i> Liên kết</li>
                     <li data-action="notifications"><i class="bi bi-bell"></i> Thông báo</li>
                 </ul>
-            </div>
+            </aside>
         </div>
-    </div>
+    </main>
 
-    <!-- Menu overlay for content -->
-    <div id="menu-content-overlay" class="menu-overlay">
+    <!-- Overlay Menu -->
+    <div id="menu-content-overlay" class="menu-overlay" style="display: none;">
         <div class="menu-content">
             <button id="menu-close" class="menu-close">×</button>
             <div id="menu-section-content" class="menu-section-content">
-                <div id="profile" class="menu-section">
-                    <h2>Trang cá nhân</h2>
-                    <p>Thông tin cá nhân của bạn sẽ được hiển thị ở đây.</p>
-                </div>
-                <div id="security" class="menu-section" style="display: none;">
+                <!-- Profile Section -->
+                <section id="profile" class="menu-section profile-section">
+                    <!-- Ảnh bìa -->
+                    <div class="cover-photo">
+                        <img src="https://images.unsplash.com/photo-1504805572947-34fad45aed93?q=80&w=2070&auto=format&fit=crop" alt="Ảnh bìa" class="cover-img" />
+                    </div>
+
+                    <!-- Thông tin cá nhân -->
+                    <div class="profile-info">
+                        <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Ảnh đại diện" class="avatar" />
+                        <h2 class="username">Nguyễn Văn A</h2>
+                        <p class="profile-bio">"Cuộc sống là một hành trình, không phải là đích đến." 🚀</p>
+
+                        <ul class="profile-details">
+                            <li><i class="bi bi-envelope-fill"></i> <span>nguyenvana@example.com</span></li>
+                            <li><i class="bi bi-telephone-fill"></i> <span>(+84) 123 456 789</span></li>
+                            <li><i class="bi bi-geo-alt-fill"></i> <span>Hà Nội, Việt Nam</span></li>
+                        </ul>
+
+                        <div class="profile-actions">
+                            <button class="profile-btn primary">Nhắn tin</button>
+                            <button class="profile-btn">Thêm bạn bè</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Friends Section -->
+                <section id="friends" class="menu-section" style="display: none;">
+                    <h2>Bạn bè</h2>
+                    <p>Danh sách bạn bè và lời mời kết bạn.</p>
+                </section>
+
+                <!-- Security Section -->
+                <section id="security" class="menu-section" style="display: none;">
                     <h2>Bảo mật</h2>
                     <p>Cài đặt bảo mật và quyền riêng tư.</p>
-                </div>
-                <div id="logout" class="menu-section" style="display: none;">
+                </section>
+
+                <!-- Logout Section -->
+                <section id="logout" class="menu-section" style="display: none;">
                     <h2>Đăng xuất</h2>
                     <p>Bạn có chắc chắn muốn đăng xuất?</p>
                     <button id="confirm-logout">Xác nhận</button>
-                </div>
+                </section>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Scripts -->
 <script src="js/api.js"></script>
 <script src="service/ConversationService.js"></script>
 <script src="service/messageService.js"></script>
 <script src="js/chat-list.js"></script>
 <script src="js/chat-message.js"></script>
 <script>
-    // Toggle menu dropdown in sidebar
-    document.getElementById('menu-toggle').addEventListener('click', function() {
+    // Toggle menu dropdown
+    document.getElementById('menu-toggle').addEventListener('click', () => {
         const menu = document.getElementById('sidebar-menu');
         menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-        console.log('Menu toggled');
     });
 
-    // Handle menu item clicks to show overlay content
+    // Handle sidebar menu click
     document.querySelectorAll('#sidebar-menu li').forEach(item => {
-        item.addEventListener('click', function() {
+        item.addEventListener('click', function () {
             const section = this.getAttribute('data-section');
-            const overlay = document.getElementById('menu-content-overlay');
-            const sections = document.querySelectorAll('.menu-section');
+            document.getElementById('menu-content-overlay').style.display = 'flex';
 
-            overlay.style.display = 'flex';
-            sections.forEach(sec => sec.style.display = 'none');
-            document.getElementById(section).style.display = 'block';
+            document.querySelectorAll('.menu-section').forEach(sec => {
+                sec.style.display = sec.id === section ? 'block' : 'none';
+            });
+
             document.getElementById('sidebar-menu').style.display = 'none';
-            console.log('Menu overlay opened:', section);
         });
     });
 
-    // Close menu overlay
-    document.getElementById('menu-close').addEventListener('click', function() {
+    // Close overlay menu
+    document.getElementById('menu-close').addEventListener('click', () => {
         document.getElementById('menu-content-overlay').style.display = 'none';
-        console.log('Menu overlay closed');
     });
 
-    // Handle logout confirmation
-    document.getElementById('confirm-logout').addEventListener('click', function() {
+    // Logout confirmation
+    document.getElementById('confirm-logout').addEventListener('click', () => {
         alert('Bạn đã đăng xuất!');
         document.getElementById('menu-content-overlay').style.display = 'none';
-        console.log('Logout confirmed');
     });
 
-    // Handle profile content
+    // Show chat profile
     function goToProfile() {
-        const chatArea = document.getElementById('chat-area');
-        const profileContent = document.getElementById('profile-content');
+        const profile = document.getElementById('profile-content');
+        const chat = document.getElementById('chat-area');
+        profile.style.display = 'block';
+
         if (window.innerWidth <= 768) {
-            profileContent.classList.add('active');
+            profile.classList.add('active');
         } else {
-            chatArea.classList.add('split');
+            chat.classList.add('split');
         }
-        profileContent.style.display = 'block';
-        console.log('Profile opened, screen width:', window.innerWidth);
     }
 
-    // Close profile content
-    document.getElementById('profile-close').addEventListener('click', function() {
-        const chatArea = document.getElementById('chat-area');
-        const profileContent = document.getElementById('profile-content');
+    // Close chat profile
+    document.getElementById('profile-close').addEventListener('click', () => {
+        const profile = document.getElementById('profile-content');
+        const chat = document.getElementById('chat-area');
+        profile.style.display = 'none';
+
         if (window.innerWidth <= 768) {
-            profileContent.classList.remove('active');
+            profile.classList.remove('active');
         } else {
-            chatArea.classList.remove('split');
+            chat.classList.remove('split');
         }
-        profileContent.style.display = 'none';
-        console.log('Profile closed');
     });
 
-    // Handle profile content actions
+    // Handle profile action items
     document.querySelectorAll('#profile-content li').forEach(item => {
-        item.addEventListener('click', function() {
+        item.addEventListener('click', function () {
             const action = this.getAttribute('data-action');
             alert(`Đã chọn: ${action}`);
-            console.log('Profile action clicked:', action);
         });
     });
 
     // Auto close profile when switching chats
-    document.getElementById('chat-list').addEventListener('click', function(e) {
+    document.getElementById('chat-list').addEventListener('click', (e) => {
         const chatItem = e.target.closest('.chat-item');
         if (chatItem) {
-            const chatArea = document.getElementById('chat-area');
-            const profileContent = document.getElementById('profile-content');
-            if (profileContent.style.display === 'block') {
+            const profile = document.getElementById('profile-content');
+            const chat = document.getElementById('chat-area');
+
+            if (profile.style.display === 'block') {
+                profile.style.display = 'none';
                 if (window.innerWidth <= 768) {
-                    profileContent.classList.remove('active');
+                    profile.classList.remove('active');
                 } else {
-                    chatArea.classList.remove('split');
+                    chat.classList.remove('split');
                 }
-                profileContent.style.display = 'none';
-                console.log('Profile closed due to chat switch');
             }
         }
     });
+
+
+
+
 </script>
+</body>
+</html>
