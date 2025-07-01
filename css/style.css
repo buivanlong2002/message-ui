@@ -1,3 +1,4 @@
+/* Reset mặc định và thiết lập font chữ toàn cục */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -11,9 +12,11 @@ body {
     line-height: 1.5;
 }
 
+/* Container chính chứa sidebar và nội dung chat */
 #container {
     display: flex;
-    height: 100vh;
+    height: calc(100vh - 20px);
+    width: calc(100% - 25px);
     background: #ffffff;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     border-radius: 12px;
@@ -21,6 +24,7 @@ body {
     margin: 10px;
 }
 
+/* Sidebar chứa danh sách chat */
 #sidebar {
     width: 340px;
     background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
@@ -31,25 +35,28 @@ body {
     transition: transform 0.3s ease;
 }
 
+/* Phần trên của sidebar với nút menu và ô tìm kiếm */
 #sidebar-top {
     display: flex;
     align-items: center;
     margin-bottom: 20px;
 }
 
+/* Icon menu sidebar */
 .bi-list {
     font-size: 1.8rem;
     margin-right: 12px;
     cursor: pointer;
-    color: #2563eb;
+    color: #4f46e5;
     transition: color 0.3s ease, transform 0.3s ease;
 }
 
 .bi-list:hover {
-    color: #1d4ed8;
+    color: #4338ca;
     transform: rotate(90deg) scale(1.1);
 }
 
+/* Ô tìm kiếm */
 #search-box {
     flex: 1;
     padding: 10px 14px;
@@ -63,11 +70,12 @@ body {
 }
 
 #search-box:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 8px rgba(37, 99, 235, 0.2);
+    border-color: #4f46e5;
+    box-shadow: 0 0 8px rgba(79, 70, 229, 0.2);
     transform: translateY(-1px);
 }
 
+/* Danh sách chat */
 #chat-list {
     overflow-y: auto;
     flex: 1;
@@ -76,6 +84,7 @@ body {
     scrollbar-color: #d1d5db #ffffff;
 }
 
+/* Mỗi item trong danh sách chat */
 .chat-item {
     display: flex;
     align-items: center;
@@ -94,10 +103,11 @@ body {
 }
 
 .chat-item.active {
-    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
 }
 
+/* Avatar của chat */
 .chat-avatar {
     width: 50px;
     height: 50px;
@@ -112,6 +122,7 @@ body {
     transform: scale(1.05);
 }
 
+/* Tên và preview của chat */
 .chat-name {
     font-weight: 600;
     font-size: 15px;
@@ -131,6 +142,7 @@ body {
     color: #6b7280;
 }
 
+/* Nội dung chat chính */
 #chat-content {
     flex: 1;
     display: flex;
@@ -138,6 +150,7 @@ body {
     background: #f9fafb;
 }
 
+/* Header của khu vực chat */
 #chat-header {
     display: flex;
     justify-content: space-between;
@@ -148,6 +161,7 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
+/* Phần bên trái của header (avatar và tên) */
 .header-left {
     display: flex;
     align-items: center;
@@ -173,6 +187,7 @@ body {
     color: #1e293b;
 }
 
+/* Các nút hành động trong header */
 .header-actions {
     display: flex;
     gap: 14px;
@@ -181,17 +196,18 @@ body {
 .header-btn {
     background: transparent;
     border: none;
-    color: #2563eb;
+    color: #4f46e5;
     font-size: 20px;
     cursor: pointer;
     transition: color 0.3s ease, transform 0.3s ease;
 }
 
 .header-btn:hover {
-    color: #1d4ed8;
+    color: #4338ca;
     transform: scale(1.1);
 }
 
+/* Khu vực chat và profile */
 .chat-and-profile {
     display: flex;
     flex: 1;
@@ -209,6 +225,7 @@ body {
     flex: 0 0 calc(100% - 340px);
 }
 
+/* Khu vực hiển thị tin nhắn */
 #chat-messages {
     flex: 1;
     overflow-y: auto;
@@ -220,11 +237,13 @@ body {
     scrollbar-color: #d1d5db #f9fafb;
 }
 
+/* Wrapper cho mỗi tin nhắn */
 .message-wrapper {
     display: flex;
     margin-bottom: 12px;
     max-width: 85%;
     align-items: flex-start;
+    position: relative;
 }
 
 .message-wrapper.user {
@@ -238,6 +257,7 @@ body {
     justify-content: flex-start;
 }
 
+/* Khung tin nhắn */
 .message-bubble {
     padding: 14px 18px;
     border-radius: 20px;
@@ -250,7 +270,7 @@ body {
 }
 
 .message-wrapper.user .message-bubble {
-    background: linear-gradient(135deg, #2563eb 0%, #60a5fa 100%);
+    background: linear-gradient(135deg, #4f46e5 0%, #818cf8 100%);
     color: #ffffff;
     border-bottom-right-radius: 6px;
 }
@@ -266,6 +286,7 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+/* Thời gian tin nhắn */
 .message-time {
     font-size: 12px;
     text-align: right;
@@ -274,6 +295,7 @@ body {
     opacity: 0.9;
 }
 
+/* Hình ảnh và video trong tin nhắn */
 .message-image,
 .message-video {
     max-width: 240px;
@@ -288,12 +310,7 @@ body {
     transform: scale(1.02);
 }
 
-.message-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
+/* Avatar của người gửi */
 .message-avatar {
     width: 42px;
     margin-right: 10px;
@@ -317,12 +334,57 @@ body {
     transform: scale(1.05);
 }
 
+/* Tên người gửi trong tin nhắn */
 .message-sender {
     font-weight: 600;
     font-size: 14px;
     color: #1e293b;
 }
 
+/* Nội dung tin nhắn */
+.message-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.message-content-text {
+    word-wrap: break-word;
+    margin-bottom: 4px;
+}
+
+.message-images,
+.message-videos,
+.message-files {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+/* File đính kèm */
+.message-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #4f46e5;
+    text-decoration: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: #f1f5f9;
+    transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.message-file:hover {
+    background: #e5e7eb;
+    transform: translateX(4px);
+}
+
+.message-file i {
+    font-size: 16px;
+}
+
+/* Khu vực nhập tin nhắn */
 .chat-input-container {
     display: none;
     align-items: center;
@@ -337,6 +399,7 @@ body {
     display: flex;
 }
 
+/* Ô nhập tin nhắn */
 #chat-input {
     flex: 1;
     padding: 12px 18px;
@@ -350,14 +413,15 @@ body {
 }
 
 #chat-input:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 8px rgba(37, 99, 235, 0.2);
+    border-color: #4f46e5;
+    box-shadow: 0 0 8px rgba(79, 70, 229, 0.2);
     transform: translateY(-1px);
 }
 
+/* Nút gửi tin nhắn */
 #chat-send-button {
     margin-left: 10px;
-    background: linear-gradient(135deg, #2563eb 0%, #10b981 100%);
+    background: #4f46e5;
     border: none;
     padding: 12px;
     border-radius: 50%;
@@ -369,9 +433,73 @@ body {
 
 #chat-send-button:hover {
     transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
 }
 
+/* Menu ngữ cảnh cho tin nhắn */
+.message-context-menu {
+    display: none;
+    position: absolute;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+    min-width: 120px;
+    animation: fadeIn 0.2s ease;
+}
+
+/* Hiển thị menu khi hover vào message-wrapper */
+.message-wrapper:hover .message-context-menu {
+    display: block;
+}
+
+/* Danh sách các mục trong menu */
+.message-context-menu ul {
+    list-style: none;
+    padding: 8px 0;
+}
+
+/* Mỗi mục trong menu */
+.message-context-menu li {
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #1e293b;
+    transition: background 0.2s ease;
+}
+
+/* Hiệu ứng hover cho mục menu */
+.message-context-menu li:hover {
+    background: #e5e7eb;
+}
+
+/* Icon trong mục menu */
+.message-context-menu li i {
+    margin-right: 8px;
+}
+
+/* Định vị menu cho tin nhắn của người dùng */
+.message-wrapper.user .message-context-menu {
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Định vị menu cho tin nhắn của người khác */
+.message-wrapper.other .message-context-menu {
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Hiệu ứng fadeIn cho menu */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Menu dropdown cho sidebar */
 .menu-dropdown {
     display: none;
     background: #ffffff;
@@ -408,6 +536,7 @@ body {
     transform: translateX(5px);
 }
 
+/* Overlay cho menu */
 .menu-overlay {
     display: none;
     position: fixed;
@@ -422,11 +551,7 @@ body {
     animation: fadeIn 0.3s ease;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
+/* Nội dung menu */
 .menu-content {
     background: #ffffff;
     border-radius: 16px;
@@ -444,6 +569,7 @@ body {
     to { transform: scale(1); opacity: 1; }
 }
 
+/* Nút đóng menu */
 .menu-close {
     position: absolute;
     top: 12px;
@@ -457,7 +583,7 @@ body {
 }
 
 .menu-close:hover {
-    color: #2563eb;
+    color: #4f46e5;
     transform: rotate(90deg);
 }
 
@@ -480,10 +606,11 @@ body {
     color: #6b7280;
 }
 
+/* Nút đăng xuất */
 #confirm-logout {
     margin-top: 12px;
     padding: 10px 20px;
-    background: linear-gradient(135deg, #2563eb 0%, #10b981 100%);
+    background: #4f46e5;
     color: #ffffff;
     border: none;
     border-radius: 12px;
@@ -492,10 +619,11 @@ body {
 }
 
 #confirm-logout:hover {
-    background: linear-gradient(135deg, #1d4ed8 0%, #0d9488 100%);
+    background: #4338ca;
     transform: translateY(-2px);
 }
 
+/* Nội dung profile */
 .profile-content {
     width: 340px;
     background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
@@ -517,6 +645,7 @@ body {
     to { transform: translateX(0); opacity: 1; }
 }
 
+/* Header của profile */
 .profile-header {
     display: flex;
     align-items: center;
@@ -524,6 +653,7 @@ body {
     margin-bottom: 24px;
 }
 
+/* Nút đóng profile */
 .profile-close {
     background: transparent;
     border: none;
@@ -534,7 +664,7 @@ body {
 }
 
 .profile-close:hover {
-    color: #2563eb;
+    color: #4f46e5;
     transform: rotate(90deg);
 }
 
@@ -570,7 +700,7 @@ body {
 .profile-content li i {
     margin-right: 12px;
     font-size: 20px;
-    color: #2563eb;
+    color: #4f46e5;
     transition: transform 0.3s ease;
 }
 
@@ -578,6 +708,7 @@ body {
     transform: scale(1.1);
 }
 
+/* Thông báo khi không có tin nhắn hoặc lỗi */
 .empty-chat, .error-chat {
     text-align: center;
     color: #6b7280;
@@ -588,7 +719,7 @@ body {
     margin: 20px;
 }
 
-/* Responsive design */
+/* Responsive design cho màn hình nhỏ hơn 1024px */
 @media (max-width: 1024px) {
     #sidebar {
         width: 280px;
@@ -642,6 +773,7 @@ body {
     }
 }
 
+/* Responsive design cho màn hình nhỏ hơn 768px */
 @media (max-width: 768px) {
     #container {
         flex-direction: column;
