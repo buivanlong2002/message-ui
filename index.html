@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Giao diện Chat - TomoTalk</title>
+    <title>TomoTalk</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
@@ -113,6 +115,7 @@
 
 <!-- Scripts -->
 <script src="controller/api.js"></script>
+<script src="service/websocket.js"></script>
 <script src="service/ConversationService.js"></script>
 <script src="service/messageService.js"></script>
 <script src="controller/chat-list.js"></script>

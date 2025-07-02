@@ -12,7 +12,7 @@ function loadChat(chatId, element, name, avatarUrl) {
         return;
     }
 
-    // Cập nhật tiêu đề
+    // Update chat header
     document.getElementById("chat-header").innerHTML = `
         <div class="header-left">
             <img src="${avatarUrl || '/images/default-avatar.jpg'}"
@@ -28,23 +28,27 @@ function loadChat(chatId, element, name, avatarUrl) {
         </div>
     `;
 
-    // Gán chatId toàn cục
+    // Set global chatId
     window.currentChatId = chatId;
 
     // Show chat input container
     const inputContainer = document.getElementById("chat-input-container");
     inputContainer.classList.add('active');
 
-    // Gọi API lấy tin nhắn
-    MessageService.getMessagesByConversation(chatId, 0, 50, token)
-        .then(result => {
-            const container = document.getElementById("chat-messages");
-            container.innerHTML = '';
+    // Clear previous messages
+    const container = document.getElementById("chat-messages");
+    container.innerHTML = '';
 
-            const status = result.status;
-            const messages = result.data;
+    // Subscribe to WebSocket for messages
+    subscribeToConversationMessages(chatId, 0, 50);
 
-            if (status?.code === "00" && status.success && Array.isArray(messages)) {
+    // Handle incoming messages via WebSocket
+    const messageHandler = (event) => {
+        const { conversationId, messages } = event.detail;
+
+        // Ensure the messages belong to the current chat
+        if (conversationId === chatId) {
+            if (Array.isArray(messages)) {
                 if (messages.length === 0) {
                     container.innerHTML = `<div class="empty-chat">Chưa có tin nhắn nào</div>`;
                     return;
@@ -59,14 +63,24 @@ function loadChat(chatId, element, name, avatarUrl) {
                 container.scrollTop = container.scrollHeight;
             } else {
                 container.innerHTML = `<div class="error-chat">Không thể tải tin nhắn</div>`;
-                console.warn("Lỗi khi lấy tin nhắn:", status?.message || "Không rõ lỗi");
+                console.warn("Lỗi khi lấy tin nhắn: Dữ liệu không đúng định dạng");
             }
-        })
-        .catch(err => {
-            console.error("Lỗi khi load chat:", err.message);
-            document.getElementById("chat-messages").innerHTML =
-                `<div class="error-chat">Không thể kết nối đến máy chủ.</div>`;
-        });
+        }
+    };
+
+    // Add event listener for messages
+    window.addEventListener("conversationMessages", messageHandler);
+
+    // Clean up event listener when switching chats to avoid memory leaks
+    const cleanup = () => {
+        window.removeEventListener("conversationMessages", messageHandler);
+    };
+
+    // Trigger cleanup when the chat changes or the window unloads
+    window.addEventListener('beforeunload', cleanup);
+    window.addEventListener('chatChanged', () => {
+        cleanup();
+    });
 }
 
 // ========================= RENDER MESSAGE =========================
@@ -87,7 +101,7 @@ function renderMessage(msg, userId) {
         case "IMAGE":
             if (msg.attachments?.length > 0) {
                 const imagesHtml = msg.attachments.map(att => {
-                    const url = "http://localhost:8885" + att.fileUrl;
+                    const url = "http://localhost:8885" + att.url; // Changed from att.fileUrl to att.url
                     return `<img src="${url}" alt="Hình ảnh" class="message-image"
                                 onerror="this.src='images/image-error.png';"/>`;
                 }).join("");
@@ -102,7 +116,7 @@ function renderMessage(msg, userId) {
         case "VIDEO":
             if (msg.attachments?.length > 0) {
                 const videosHtml = msg.attachments.map(att => {
-                    const url = "http://localhost:8885" + att.fileUrl;
+                    const url = "http://localhost:8885" + att.url; // Changed from att.fileUrl to att.url
                     return `<video controls class="message-video"
                                    onerror="this.poster='images/video-error.png';">
                                 <source src="${url}" type="video/mp4">
@@ -120,8 +134,8 @@ function renderMessage(msg, userId) {
         case "FILE":
             if (msg.attachments?.length > 0) {
                 const filesHtml = msg.attachments.map(att => {
-                    const url = "http://localhost:8885" + att.fileUrl;
-                    const fileName = att.fileUrl.split("/").pop();
+                    const url = "http://localhost:8885" + att.url; // Changed from att.fileUrl to att.url
+                    const fileName = att.fileName || att.url.split("/").pop(); // Use fileName if available
                     return `<a href="${url}" target="_blank" class="message-file">
                                 <i class="bi bi-file-earmark-text-fill"></i> ${escapeHTML(fileName)}
                             </a>`;
@@ -176,7 +190,6 @@ function renderMessage(msg, userId) {
 
     return wrapper;
 }
-
 // ========================= SEND MESSAGE =========================
 async function sendMessage(chatId) {
     const input = document.getElementById("chat-input");
