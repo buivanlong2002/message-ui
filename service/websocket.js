@@ -54,13 +54,13 @@ function subscribeToConversations(userId) {
 /**
  * Gửi yêu cầu lấy tin nhắn và đăng ký nhận dữ liệu từ một cuộc trò chuyện cụ thể
  */
-function subscribeToConversationMessages(conversationId, page = 0, size = 20) {
+function subscribeToConversationMessages(conversationId, userId, page = 0, size = 20) {
     if (!stompClient || !stompClient.connected) {
         console.warn("⚠️ WebSocket chưa kết nối.");
         return;
     }
 
-    const topic = `/topic/messages/${conversationId}`;
+    const topic = `/topic/messages/${conversationId}/${userId}`;
     if (!subscribedTopics.has(topic)) {
         stompClient.subscribe(topic, function (message) {
             const messages = JSON.parse(message.body);
@@ -75,9 +75,12 @@ function subscribeToConversationMessages(conversationId, page = 0, size = 20) {
 
     stompClient.send("/app/messages/get", {}, JSON.stringify({
         conversationId,
+        userId, // 👈 gửi thêm userId
         page,
         size
     }));
+
+
 }
 
 

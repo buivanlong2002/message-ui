@@ -40,7 +40,7 @@ function loadChat(chatId, element, name, avatarUrl) {
     container.innerHTML = '';
 
     // Subscribe to WebSocket for messages
-    subscribeToConversationMessages(chatId, 0, 50);
+    subscribeToConversationMessages(chatId, userId, 0, 50);
 
     // Handle incoming messages via WebSocket
     const messageHandler = (event) => {
