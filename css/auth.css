@@ -174,7 +174,9 @@ body {
     color: var(--error-color);
     font-size: 0.8rem;
     padding-left: 5px;
-    display: none;
+    margin-top: 4px;
+    display: block; /* ✅ luôn hiển thị nếu có nội dung */
+    min-height: 16px; /* tránh bị co lại khi không có lỗi */
 }
 
 .form-options {
