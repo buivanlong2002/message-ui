@@ -75,6 +75,61 @@ body {
     transform: translateY(-1px);
 }
 
+/* Menu dropdown cho sidebar */
+.menu-dropdown {
+    display: none;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    position: absolute;
+    top: 70px;
+    left: 20px;
+    width: 240px;
+    z-index: 100;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.menu-dropdown ul {
+    list-style: none;
+    padding: 12px 0;
+}
+
+.menu-dropdown li {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    color: #1e293b;
+    border-radius: 8px;
+    margin: 4px 8px;
+    transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.menu-dropdown li:hover {
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+    transform: translateX(5px);
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
+}
+
+.menu-dropdown li i {
+    margin-right: 12px;
+    font-size: 18px;
+    color: #4f46e5;
+    transition: transform 0.3s ease;
+}
+
+.menu-dropdown li:hover i {
+    transform: scale(1.1);
+}
+
 /* Danh sách chat */
 #chat-list {
     overflow-y: auto;
@@ -499,43 +554,6 @@ body {
     to { opacity: 1; }
 }
 
-/* Menu dropdown cho sidebar */
-.menu-dropdown {
-    display: none;
-    background: #ffffff;
-    border: 1px solid #d1d5db;
-    border-radius: 12px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-    position: absolute;
-    top: 70px;
-    left: 20px;
-    z-index: 100;
-    animation: slideIn 0.3s ease;
-}
-
-@keyframes slideIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.menu-dropdown ul {
-    list-style: none;
-    padding: 12px 0;
-}
-
-.menu-dropdown li {
-    padding: 12px 24px;
-    cursor: pointer;
-    font-size: 15px;
-    color: #1e293b;
-    transition: background 0.3s ease, transform 0.3s ease;
-}
-
-.menu-dropdown li:hover {
-    background: #e5e7eb;
-    transform: translateX(5px);
-}
-
 /* Overlay cho menu */
 .menu-overlay {
     display: none;
@@ -678,36 +696,6 @@ body {
     padding: 0;
 }
 
-.profile-content li {
-    display: flex;
-    align-items: center;
-    padding: 14px 24px;
-    cursor: pointer;
-    font-size: 16px;
-    color: #1e293b;
-    border-radius: 12px;
-    margin-bottom: 8px;
-    background: #ffffff;
-    transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.profile-content li:hover {
-    background: #e5e7eb;
-    transform: translateX(5px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.profile-content li i {
-    margin-right: 12px;
-    font-size: 20px;
-    color: #4f46e5;
-    transition: transform 0.3s ease;
-}
-
-.profile-content li:hover i {
-    transform: scale(1.1);
-}
-
 /* Thông báo khi không có tin nhắn hoặc lỗi */
 .empty-chat, .error-chat {
     text-align: center;
@@ -718,6 +706,267 @@ body {
     border-radius: 12px;
     margin: 20px;
 }
+
+/* Profile section */
+.profile-section {
+    max-width: 800px;
+    margin: auto;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.cover-photo .cover-img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    display: block;
+}
+
+.profile-info {
+    position: relative;
+    text-align: center;
+    padding: 2rem 1rem 1rem;
+    background-color: #fff;
+}
+
+.avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 4px solid #fff;
+    object-fit: cover;
+    position: absolute;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #fff;
+}
+
+.username {
+    margin-top: 70px;
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.profile-bio {
+    color: #666;
+    font-size: 1rem;
+}
+
+.profile-details {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+}
+
+.profile-details li {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+.profile-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.profile-btn {
+    padding: 8px 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #ffffff;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.profile-btn.primary {
+    background: #4f46e5;
+    color: #ffffff;
+    border: none;
+}
+
+.profile-btn:hover {
+    background: #e5e7eb;
+    transform: translateY(-2px);
+}
+
+.profile-btn.primary:hover {
+    background: #4338ca;
+}
+
+/* Friends section */
+.friend-search-box {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 24px;
+    font-size: 14px;
+    background: #f9fafb;
+    color: #1e293b;
+    outline: none;
+    margin-bottom: 20px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.friend-search-box:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 8px rgba(79, 70, 229, 0.2);
+    transform: translateY(-1px);
+}
+
+.friends-list, .friend-requests {
+    margin-top: 20px;
+}
+
+.friend-item, .friend-request-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-radius: 12px;
+    background: #ffffff;
+    margin-bottom: 8px;
+    transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.friend-item:hover, .friend-request-item:hover {
+    background: #e5e7eb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.friend-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-right: 12px;
+    object-fit: cover;
+    border: 2px solid #e5e7eb;
+    transition: transform 0.3s ease;
+}
+
+.friend-avatar:hover {
+    transform: scale(1.05);
+}
+
+.friend-info {
+    flex: 1;
+}
+
+.friend-name {
+    font-weight: 600;
+    font-size: 15px;
+    color: #1e293b;
+}
+
+.friend-status {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.friend-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.friend-btn {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #ffffff;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.friend-btn.primary {
+    background: #4f46e5;
+    color: #ffffff;
+    border: none;
+}
+
+.friend-btn:hover {
+    background: #e5e7eb;
+    transform: translateY(-2px);
+}
+
+.friend-btn.primary:hover {
+    background: #4338ca;
+}
+
+.friend-btn i {
+    font-size: 14px;
+}
+
+/* ======================================================= */
+/* === CSS CẬP NHẬT CHO PROFILE VÀ BẢO MẬT (BẮT ĐẦU) === */
+/* ======================================================= */
+
+/* Kiểu chung cho danh sách trong profile và bảo mật */
+.security-options-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 24px;
+}
+
+/* Áp dụng chung style cho các mục trong menu profile và menu bảo mật để nhất quán */
+#profile-content li,
+.security-options-list li {
+    display: flex;
+    align-items: center;
+    padding: 14px 24px;
+    cursor: pointer;
+    font-size: 16px;
+    color: #1e293b;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    background: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+#profile-content li:hover,
+.security-options-list li:hover {
+    background: #e5e7eb;
+    transform: translateX(5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+#profile-content li i,
+.security-options-list li i {
+    margin-right: 16px;
+    font-size: 20px;
+    color: #4f46e5;
+    transition: transform 0.3s ease;
+    width: 24px; /* Đảm bảo các icon thẳng hàng */
+    text-align: center;
+}
+
+#profile-content li:hover i,
+.security-options-list li:hover i {
+    transform: scale(1.1);
+}
+
+/* Kiểu riêng cho span text trong mục bảo mật */
+.security-options-list li span {
+    font-weight: 500;
+}
+
+/* ======================================================= */
+/* === CSS CẬP NHẬT CHO PROFILE VÀ BẢO MẬT (KẾT THÚC) === */
+/* ======================================================= */
 
 /* Responsive design cho màn hình nhỏ hơn 1024px */
 @media (max-width: 1024px) {
@@ -767,9 +1016,35 @@ body {
         width: 360px;
     }
 
-    .profile-content li {
+    #profile-content li, .security-options-list li {
         padding: 12px 20px;
         font-size: 15px;
+    }
+
+    .menu-dropdown {
+        width: 200px;
+    }
+
+    .friend-item, .friend-request-item {
+        padding: 10px;
+    }
+
+    .friend-avatar {
+        width: 40px;
+        height: 40px;
+    }
+
+    .friend-name {
+        font-size: 14px;
+    }
+
+    .friend-status {
+        font-size: 12px;
+    }
+
+    .friend-btn {
+        padding: 6px 10px;
+        font-size: 12px;
     }
 }
 
@@ -800,7 +1075,7 @@ body {
         top: 0;
         right: 0;
         height: 100vh;
-        z-index: 1000;
+        z-index: 1002;
         background: #ffffff;
         transform: translateX(100%);
         transition: transform 0.3s ease;
@@ -838,55 +1113,223 @@ body {
         width: 90%;
         max-width: 320px;
     }
+
+    .menu-dropdown {
+        width: 90%;
+        max-width: 280px;
+        left: 10px;
+        top: 60px;
+    }
+
+    .friend-item, .friend-request-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .friend-avatar {
+        width: 36px;
+        height: 36px;
+    }
+
+    .friend-actions {
+        margin-top: 8px;
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .friend-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
 }
+/* ======================================================= */
+/* === CSS MỚI CHO BẢN NÂNG CẤP GIAO DIỆN (BẮT ĐẦU) === */
+/* ======================================================= */
 
+/* --- 1. Cải tiến trang cá nhân --- */
 
-
-.profile-section {
-    max-width: 800px;
-    margin: auto;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.profile-section-body {
     background-color: #fff;
-    font-family: 'Segoe UI', sans-serif;
-}
-
-.cover-photo .cover-img {
-    width: 100%;
-    height: 220px;
-    object-fit: cover;
-    display: block;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .profile-info {
-    position: relative;
+    padding-bottom: 2rem;
+}
+
+.profile-details {
+    margin: 1.5rem 0;
+    text-align: left;
+    padding: 0 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.profile-details li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+    color: #4b5563; /* Xám đậm hơn */
+}
+
+.profile-details li i {
+    color: #4f46e5;
+    font-size: 18px;
+    width: 20px;
     text-align: center;
-    padding: 2rem 1rem 1rem;
-    background-color: #fff;
 }
 
-.avatar {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    border: 4px solid #fff;
-    object-fit: cover;
-    position: absolute;
-    top: -60px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #fff;
+#edit-profile-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    padding: 10px 20px;
 }
 
-.username {
-    margin-top: 70px;
-    font-size: 1.8rem;
+
+/* --- 2. Giao diện mục Bảo mật (Tab, Form) --- */
+
+.security-nav {
+    display: flex;
+    gap: 8px;
+    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 24px;
+}
+
+.security-nav-item {
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 15px;
     font-weight: 600;
-    color: #333;
+    color: #6b7280;
+    position: relative;
+    transition: color 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.description {
-    color: #666;
-    font-size: 1rem;
+.security-nav-item::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #4f46e5;
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
 }
+
+.security-nav-item.active,
+.security-nav-item:hover {
+    color: #4f46e5;
+}
+
+.security-nav-item.active::after {
+    transform: scaleX(1);
+}
+
+.security-content {
+    animation: fadeIn 0.4s ease;
+}
+
+.security-view h3 {
+    font-size: 18px;
+    color: #1e293b;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.security-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 15px;
+    background: #f9fafb;
+    color: #1e293b;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.form-actions {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* --- 3. Danh sách bạn bè và lời mời --- */
+
+/* Đảm bảo các danh sách này có scrollbar nếu quá dài */
+.friends-list,
+.friend-requests-list,
+.blocked-users-list {
+    max-height: 40vh;
+    overflow-y: auto;
+    padding-right: 8px; /* Cho không gian scrollbar */
+}
+
+/* Tùy chỉnh scrollbar cho đẹp hơn */
+.friends-list::-webkit-scrollbar,
+.friend-requests-list::-webkit-scrollbar,
+.blocked-users-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.friends-list::-webkit-scrollbar-track,
+.friend-requests-list::-webkit-scrollbar-track,
+.blocked-users-list::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+.friends-list::-webkit-scrollbar-thumb,
+.friend-requests-list::-webkit-scrollbar-thumb,
+.blocked-users-list::-webkit-scrollbar-thumb {
+    background: #c7d2fe;
+    border-radius: 3px;
+}
+
+.friends-list::-webkit-scrollbar-thumb:hover,
+.friend-requests-list::-webkit-scrollbar-thumb:hover,
+.blocked-users-list::-webkit-scrollbar-thumb:hover {
+    background: #a5b4fc;
+}
+
+/* ======================================================= */
+/* === CSS MỚI CHO BẢN NÂNG CẤP GIAO DIỆN (KẾT THÚC) === */
+/* ======================================================= */

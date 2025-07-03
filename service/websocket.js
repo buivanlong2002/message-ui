@@ -4,11 +4,11 @@ const maxRetries = 5;
 const subscribedTopics = new Set();
 
 /**
- * Kết nối tới WebSocket server và khởi tạo subscription cho cuộc trò chuyện
+ * Kết nối tới WebSocket server
  */
 function connectWebSocket(userId, token) {
     if (retryCount >= maxRetries) {
-        console.error("Đã vượt quá số lần kết nối lại.");
+        alert("Không thể kết nối đến server. Vui lòng thử lại sau.");
         return;
     }
 
@@ -18,7 +18,6 @@ function connectWebSocket(userId, token) {
     stompClient.connect(
         { Authorization: "Bearer " + token },
         function (frame) {
-            console.log("✅ WebSocket connected:", frame);
             retryCount = 0;
 
             // Đăng ký nhận danh sách cuộc trò chuyện
@@ -26,9 +25,11 @@ function connectWebSocket(userId, token) {
 
             // Yêu cầu lấy danh sách cuộc trò chuyện ban đầu
             stompClient.send("/app/conversations/get", {}, JSON.stringify(userId));
+
+            // Đăng ký nhận tin nhắn mới cho tất cả cuộc trò chuyện
+            subscribeToNewMessages(userId);
         },
         function (error) {
-            console.error("❌ WebSocket connection error:", error);
             retryCount++;
             setTimeout(() => connectWebSocket(userId, token), 1000);
         }
@@ -52,14 +53,33 @@ function subscribeToConversations(userId) {
 }
 
 /**
- * Gửi yêu cầu lấy tin nhắn và đăng ký nhận dữ liệu từ một cuộc trò chuyện cụ thể
+ * Đăng ký nhận tin nhắn mới cho tất cả cuộc trò chuyện
  */
-function subscribeToConversationMessages(conversationId, userId, page = 0, size = 20) {
+function subscribeToNewMessages(userId) {
+    const topic = `/topic/new-message/${userId}`;
+    if (subscribedTopics.has(topic)) return;
+
+    stompClient.subscribe(topic, function (message) {
+        const { conversationId, message: newMessage } = JSON.parse(message.body);
+        const event = new CustomEvent("newMessageReceived", {
+            detail: { conversationId, message: newMessage }
+        });
+        window.dispatchEvent(event);
+    });
+
+    subscribedTopics.add(topic);
+}
+
+/**
+ * Đăng ký nhận tin nhắn trong một cuộc trò chuyện cụ thể
+ */
+function subscribeToConversationMessages(conversationId, page = 0, size = 50) {
     if (!stompClient || !stompClient.connected) {
-        console.warn("⚠️ WebSocket chưa kết nối.");
+
         return;
     }
 
+    const userId = localStorage.getItem("userId");
     const topic = `/topic/messages/${conversationId}/${userId}`;
     if (!subscribedTopics.has(topic)) {
         stompClient.subscribe(topic, function (message) {
@@ -73,14 +93,13 @@ function subscribeToConversationMessages(conversationId, userId, page = 0, size 
         subscribedTopics.add(topic);
     }
 
+    // Lấy thời gian cuối cùng xem (nếu có) hoặc sử dụng thời gian hiện tại
+    const lastSeenTimestamp = localStorage.getItem(`lastSeen_${conversationId}`) || new Date().toISOString();
     stompClient.send("/app/messages/get", {}, JSON.stringify({
         conversationId,
-        userId, // 👈 gửi thêm userId
-        page,
-        size
+        userId,
+        page: 0,
+        size: 100, // Tăng size để lấy đủ tin nhắn mới
+        afterTimestamp: lastSeenTimestamp // Chỉ lấy tin nhắn sau thời gian cuối cùng xem
     }));
-
-
 }
-
-
