@@ -37,6 +37,7 @@
 
     <!-- Main Chat Content -->
     <main id="chat-content">
+
         <div id="chat-header"></div>
         <div class="chat-and-profile">
             <!-- Chat Area -->
@@ -44,7 +45,6 @@
                 <div id="chat-messages" class="chat-messages"></div>
                 <div id="chat-input-container" class="chat-input-container"></div>
             </section>
-
             <!-- Chat Profile (cho từng cuộc trò chuyện) -->
             <aside id="profile-content" class="profile-content" style="display: none;">
                 <div class="profile-header">
@@ -227,6 +227,11 @@
 <script src="controller/chat-message.js"></script>
 <!-- Inline Script for UI Interactions -->
 <script>
+    document.getElementById("confirm-logout").addEventListener("click", function () {
+        localStorage.clear();
+        window.location.href = "auth.html";
+    });
+
     document.addEventListener('DOMContentLoaded', () => {
         // Toggle menu dropdown
         const menuToggle = document.getElementById('menu-toggle');
