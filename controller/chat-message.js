@@ -11,7 +11,7 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
 
     if (!token || !userId) {
         localStorage.clear();
-        window.location.href = "/login.html";
+        window.location.href = "/auth.html";
         return;
     }
 
@@ -25,10 +25,9 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
             <span class="header-name">${escapeHTML(name)}</span>
         </div>
         <div class="header-actions">
-            <button class="header-btn" onclick="makeCall()"><i class="bi bi-telephone-fill"></i></button>
-            <button class="header-btn" onclick="makeVideoCall()"><i class="bi bi-camera-video-fill"></i></button>
-            <button class="header-btn profile-btn" onclick="goToProfile(${isGroup ? 'true' : 'false'})"><i class="bi bi-person-lines-fill"></i>
-  </button>
+              <button class="header-btn" onclick="makeCall()"><i class="bi bi-telephone-fill"></i></button>
+              <button class="header-btn" onclick="makeVideoCall()"><i class="bi bi-camera-video-fill"></i></button>
+              <button class="header-btn profile-btn" onclick="goToProfile('${name}', ${isGroup ? 'true' : 'false'}, '${avatarUrl}')"><i class="bi bi-person-lines-fill"></i></button>
         </div>
     `;
 
@@ -467,26 +466,9 @@ function closeProfile() {
         chat.classList.remove('split');
     }
 }
-function goToProfile(isGroup) {
-    isGroup = (isGroup === true || isGroup === 'true'); // ép kiểu an toàn
 
-    const profileContent = document.getElementById('profile-content');
-    const profileTitle = document.getElementById('profile-title');
-    const profileDetails = document.getElementById('profile-details');
-    const chat = document.getElementById('chat-area');
 
-    // Hiển thị profile-content
-    profileContent.style.display = 'block';
-    profileTitle.innerText = isGroup ? "Đây là nhóm" : "Đây là chat 1-1";
-    profileDetails.innerHTML = "";
 
-    // Responsive
-    if (window.innerWidth <= 768) {
-        profileContent.classList.add('active');
-    } else {
-        chat.classList.add('split');
-    }
-}
 
 document.getElementById('profile-close').addEventListener('click', closeProfile);
 
