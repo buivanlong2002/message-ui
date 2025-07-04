@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="icon" type="image/png" sizes="64x64" href="./images/title_logo.png">
     <title>TomoTalk</title>
     <!-- Sử dụng phiên bản Bootstrap Icons mới hơn để có nhiều icon hơn -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
@@ -15,7 +16,8 @@
     <!-- Sidebar -->
     <aside id="sidebar">
         <div id="sidebar-top">
-            <i class="bi bi-list" id="menu-toggle"></i>
+<!--            <i class="bi bi-list" id="menu-toggle"></i>-->
+            <img src="images/logo_TomoTalk.png" id="menu-toggle" style="width: 40px ; height: 30px ;"/>
             <input type="text" id="search-box" placeholder="Tìm kiếm..."/>
         </div>
 
@@ -40,25 +42,19 @@
 
         <div id="chat-header"></div>
         <div class="chat-and-profile">
+
             <!-- Chat Area -->
             <section id="chat-area" class="chat-area">
                 <div id="chat-messages" class="chat-messages"></div>
                 <div id="chat-input-container" class="chat-input-container"></div>
             </section>
             <!-- Chat Profile (cho từng cuộc trò chuyện) -->
-            <aside id="profile-content" class="profile-content" style="display: none;">
+            <aside id="profile-content" class="profile-content">
                 <div class="profile-header">
+                    <h3 id="profile-title"></h3>
                     <button id="profile-close" class="profile-close">×</button>
-                    <h2>Thông tin cuộc trò chuyện</h2>
                 </div>
-                <ul>
-                    <li data-action="search-messages"><i class="bi bi-search"></i> Tìm kiếm tin nhắn</li>
-                    <li data-action="archived"><i class="bi bi-archive"></i> Lưu trữ</li>
-                    <li data-action="photos"><i class="bi bi-image"></i> Ảnh</li>
-                    <li data-action="files"><i class="bi bi-file-earmark"></i> File</li>
-                    <li data-action="links"><i class="bi bi-link"></i> Liên kết</li>
-                    <li data-action="notifications"><i class="bi bi-bell"></i> Thông báo</li>
-                </ul>
+                <div id="profile-details"></div>
             </aside>
         </div>
     </main>
@@ -72,12 +68,11 @@
                 <!-- 1. Profile Section (ĐÃ LÀM ĐẸP LẠI) -->
                 <section id="profile" class="menu-section">
                         <div class="cover-photo">
-                            <img src="https://images.unsplash.com/photo-1504805572947-34fad45aed93?q=80&w=2070&auto=format&fit=crop" alt="Ảnh bìa" class="cover-img"/>
+                            <img src="images/banner.jpg" alt="Ảnh bìa" class="cover-img"/>
                         </div>
                         <div class="profile-info">
-                            <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Ảnh đại diện" class="avatar"/>
-                            <h2 class="username">Nguyễn Văn A</h2>
-                            <p class="profile-bio">"Cuộc sống là một hành trình, không phải là đích đến." 🚀</p>
+                            <img id="avatar" class="avatar" />
+                            <h2 class="username" id="username"></h2>
                             <div class="profile-actions">
                                 <button id="edit-profile-btn" class="profile-btn primary"><i class="bi bi-pencil-square"></i> Chỉnh sửa trang cá nhân</button>
                             </div>
@@ -315,6 +310,10 @@
 
 
     });
+
+
+
+
 </script>
 </body>
 </html>

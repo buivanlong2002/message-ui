@@ -41,7 +41,7 @@ body {
     padding: 3rem;
     text-align: center;
     position: relative;
-    background: url('../images/bg1.jpg') center/cover no-repeat;
+    background: url('../images/background_login.jpg') center/cover no-repeat;
     color: #1e3a8a;
     overflow: hidden;
 }
