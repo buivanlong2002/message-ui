@@ -4,7 +4,7 @@ function loadChatList() {
 
     if (!token || !userId) {
         localStorage.clear();
-        window.location.href = "/login.html";
+        window.location.href = "/auth.html";
         return;
     }
 
@@ -42,7 +42,7 @@ function displayConversations(conversations) {
         const avatarUrl = "http://localhost:8885" + chat.avatarUrl;
 
         chatItem.onclick = function () {
-            loadChat(chat.id, this, name, avatarUrl);
+            loadChat(chat.id, this, name, avatarUrl , chat.isGroup);
         };
 
         chatItem.innerHTML = `
@@ -50,7 +50,7 @@ function displayConversations(conversations) {
                 src="${avatarUrl}"
                 alt="Avatar"
                 class="chat-avatar"
-                onerror="this.onerror=null;this.src='/images/default-avatar.jpg';"
+                onerror="this.onerror=null;this.src='/images/default_avatar.jpg';"
             >
             <div style="flex: 1;">
                 <div class="chat-name">${name}</div>

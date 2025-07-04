@@ -1,5 +1,4 @@
-
-function loadChat(chatId, element, name, avatarUrl) {
+function loadChat(chatId, element, name, avatarUrl, isGroup) {
     // Active item
     document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
     if (element) element.classList.add('active');
@@ -7,6 +6,7 @@ function loadChat(chatId, element, name, avatarUrl) {
     // Token & userId
     const token = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
+
     if (!token || !userId) {
         localStorage.clear();
         window.location.href = "/login.html";
@@ -16,16 +16,17 @@ function loadChat(chatId, element, name, avatarUrl) {
     // Update chat header
     document.getElementById("chat-header").innerHTML = `
         <div class="header-left">
-            <img src="${avatarUrl || '/images/default-avatar.jpg'}"
+            <img src="${avatarUrl || '/images/default_avatar.jpg'}"
                  alt="Avatar"
                  class="chat-avatar"
-                 onerror="this.onerror=null;this.src='/images/default-avatar.jpg';">
+                 onerror="this.onerror=null;this.src='/images/default_avatar.jpg';">
             <span class="header-name">${escapeHTML(name)}</span>
         </div>
         <div class="header-actions">
             <button class="header-btn" onclick="makeCall()"><i class="bi bi-telephone-fill"></i></button>
             <button class="header-btn" onclick="makeVideoCall()"><i class="bi bi-camera-video-fill"></i></button>
-            <button class="header-btn" onclick="goToProfile()"><i class="bi bi-person-lines-fill"></i></button>
+            <button class="header-btn profile-btn" onclick="goToProfile(${isGroup ? 'true' : 'false'})"><i class="bi bi-person-lines-fill"></i>
+  </button>
         </div>
     `;
 
@@ -48,7 +49,7 @@ function loadChat(chatId, element, name, avatarUrl) {
 
     // Load old messages
     const messageHandler = (event) => {
-        const { conversationId, messages } = event.detail;
+        const {conversationId, messages} = event.detail;
         if (conversationId !== chatId) return;
 
         container.innerHTML = '';
@@ -74,7 +75,7 @@ function loadChat(chatId, element, name, avatarUrl) {
 
     // Handle realtime messages
     const realtimeHandler = (event) => {
-        const { conversationId, message } = event.detail;
+        const {conversationId, message} = event.detail;
         if (conversationId !== chatId) return;
 
         // Prevent duplicate messages
@@ -193,7 +194,7 @@ function renderMessage(msg, userId) {
 
     const senderAvatar = msg.sender?.avatarSender
         ? `http://localhost:8885${msg.sender.avatarSender}`
-        : "images/default-avatar.jpg";
+        : "images/default_avatar.jpg";
     const senderName = msg.sender?.nameSender || "Unknown";
 
     const senderInfoHtml = isUser
@@ -213,7 +214,7 @@ function renderMessage(msg, userId) {
     wrapper.innerHTML = `
         <div class="message-avatar">
             <img src="${senderAvatar}" alt="Avatar" class="avatar-image"
-                 onerror="this.src='images/default-avatar.jpg';"/>
+                 onerror="this.src='images/default_avatar.jpg';"/>
         </div>
         <div class="message-bubble">
             ${senderInfoHtml}
@@ -276,14 +277,14 @@ async function sendMessage(chatId) {
     tempMessageEl.innerHTML = `
         <div class="message-avatar">
             <img src="images/default-avatar.jpg" alt="Avatar" class="avatar-image"
-                 onerror="this.src='images/default-avatar.jpg';"/>
+                 onerror="this.src='images/default_avatar.jpg';"/>
         </div>
         <div class="message-bubble">
             <div class="message-content">
                 ${content ? escapeHTML(content) + "<br/>" : ""}
                 ${fileHtml}
             </div>
-            <div class="message-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+            <div class="message-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</div>
             <div class="message-context-menu">
                 <ul>
                     <li><i class="bi bi-reply-fill"></i> Trả lời</li>
@@ -375,8 +376,8 @@ document.addEventListener("DOMContentLoaded", () => {
         inputContainer.innerHTML = `
             <input type="file" id="chat-file" multiple style="display: none;"/>
             <button id="file-upload-button" title="Gửi file"><i class="bi bi-paperclip"></i></button>
-            <input type="text" id="chat-input" placeholder="Nhập tin nhắn..."/>
-            <button id="chat-send-button"><i class="bi bi-send"></i></button>
+            <textarea id="chat-input" placeholder="Nhập tin nhắn..."></textarea>
+            <button id="chat-send-button"><img src="/images/title_logo.png"  style="width: 45px ; height: 45px ;" alt=""/></button>
         `;
 
         document.getElementById("file-upload-button").addEventListener("click", () => {
@@ -450,21 +451,28 @@ async function recallMessage(messageId) {
     }
 }
 
+function goToProfile(isGroup) {
+    isGroup = (isGroup === true || isGroup === 'true'); // ép kiểu an toàn
 
-// Show chat profile
-function goToProfile() {
-    const profile = document.getElementById('profile-content');
+    const profileContent = document.getElementById('profile-content');
+    const profileTitle = document.getElementById('profile-title');
+    const profileDetails = document.getElementById('profile-details');
     const chat = document.getElementById('chat-area');
-    profile.style.display = 'block';
 
+    // Hiển thị profile-content
+    profileContent.style.display = 'block';
+    profileTitle.innerText = isGroup ? "Đây là nhóm" : "Đây là chat 1-1";
+    profileDetails.innerHTML = "";
+
+    // Responsive
     if (window.innerWidth <= 768) {
-        profile.classList.add('active');
+        profileContent.classList.add('active');
     } else {
         chat.classList.add('split');
     }
 }
 
-// Close chat profile
+// Đóng profile-content khi nhấp nút đóng
 document.getElementById('profile-close').addEventListener('click', () => {
     const profile = document.getElementById('profile-content');
     const chat = document.getElementById('chat-area');
@@ -478,6 +486,18 @@ document.getElementById('profile-close').addEventListener('click', () => {
 });
 
 
+window.addEventListener('resize', () => {
+    const profileContent = document.getElementById('profile-content');
+    const chat = document.getElementById('chat-area');
+    if (window.innerWidth <= 768) {
+        profileContent.classList.toggle('active', profileContent.style.display === 'block');
+        chat.classList.remove('split');
+    } else {
+        chat.classList.toggle('split', profileContent.style.display === 'block');
+        profileContent.classList.remove('active');
+    }
+});
+
 function escapeHTML(str) {
     if (!str) return '';
     return str.replace(/[&<>"']/g, tag => ({
@@ -487,4 +507,6 @@ function escapeHTML(str) {
         '"': '&quot;',
         "'": '&#39;'
     }[tag] || tag));
+
+
 }
