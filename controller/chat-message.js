@@ -1,4 +1,6 @@
 function loadChat(chatId, element, name, avatarUrl, isGroup) {
+
+    closeProfile();
     // Active item
     document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
     if (element) element.classList.add('active');
@@ -451,6 +453,20 @@ async function recallMessage(messageId) {
     }
 }
 
+function closeProfile() {
+    const profile = document.getElementById('profile-content');
+    const chat = document.getElementById('chat-area');
+
+    // Ẩn khung profile đi
+    profile.style.display = 'none';
+
+    // Gỡ bỏ các class responsive đã thêm vào trước đó
+    if (window.innerWidth <= 768) {
+        profile.classList.remove('active');
+    } else {
+        chat.classList.remove('split');
+    }
+}
 function goToProfile(isGroup) {
     isGroup = (isGroup === true || isGroup === 'true'); // ép kiểu an toàn
 
@@ -472,6 +488,8 @@ function goToProfile(isGroup) {
     }
 }
 
+document.getElementById('profile-close').addEventListener('click', closeProfile);
+
 // Đóng profile-content khi nhấp nút đóng
 document.getElementById('profile-close').addEventListener('click', () => {
     const profile = document.getElementById('profile-content');
@@ -482,19 +500,6 @@ document.getElementById('profile-close').addEventListener('click', () => {
         profile.classList.remove('active');
     } else {
         chat.classList.remove('split');
-    }
-});
-
-
-window.addEventListener('resize', () => {
-    const profileContent = document.getElementById('profile-content');
-    const chat = document.getElementById('chat-area');
-    if (window.innerWidth <= 768) {
-        profileContent.classList.toggle('active', profileContent.style.display === 'block');
-        chat.classList.remove('split');
-    } else {
-        chat.classList.toggle('split', profileContent.style.display === 'block');
-        profileContent.classList.remove('active');
     }
 });
 
