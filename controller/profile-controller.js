@@ -154,6 +154,10 @@ const ProfileController = {
 
         friendsList.innerHTML = '';
 
+        // Lưu cache danh sách bạn bè
+        ProfileController.friendsListCache = friends;
+        localStorage.setItem('friendsList', JSON.stringify(friends));
+
         if (!friends || friends.length === 0) {
             friendsList.innerHTML = '<p class="no-data">Chưa có bạn bè nào</p>';
             return;
@@ -995,7 +999,7 @@ const ProfileController = {
         }
         const currentUserId = localStorage.getItem('userId');
         users.forEach(user => {
-            const isFriend = currentFriends.some(f => f.id === user.id);
+            const isFriend = currentFriends.some(f => String(f.id) === String(user.id));
             const item = document.createElement('div');
             item.className = 'search-user-item';
             item.innerHTML = `
