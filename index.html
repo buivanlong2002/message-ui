@@ -84,18 +84,8 @@
                     <h2>Danh sách bạn bè</h2>
                     <input type="text" id="friend-search" placeholder="Tìm kiếm bạn bè..." class="friend-search-box"/>
                     <div class="friends-list">
-                        <!-- Danh sách bạn bè sẽ được render ở đây -->
-                        <div class="friend-item">
-                            <img src="https://randomuser.me/api/portraits/women/45.jpg" alt="Ảnh bạn bè" class="friend-avatar"/>
-                            <div class="friend-info">
-                                <h3 class="friend-name">Trần Thị B</h3>
-                                <p class="friend-status">Online</p>
-                            </div>
-                            <div class="friend-actions">
-                                <button class="friend-btn primary" data-action="message"><i class="bi bi-chat-fill"></i> Nhắn tin</button>
-                                <button class="friend-btn" data-action="remove"><i class="bi bi-person-x-fill"></i> Xóa</button>
-                            </div>
-                        </div>
+                        <!-- Danh sách bạn bè sẽ được render động từ backend -->
+                        <div class="loading">Đang tải danh sách bạn bè...</div>
                     </div>
                 </section>
 
@@ -103,17 +93,8 @@
                 <section id="friend-requests" class="menu-section" style="display: none;">
                     <h2>Lời mời kết bạn</h2>
                     <div class="friend-requests-list">
-                        <!-- Lời mời kết bạn sẽ được render ở đây -->
-                        <div class="friend-item">
-                            <img src="https://randomuser.me/api/portraits/women/23.jpg" alt="Ảnh người gửi" class="friend-avatar"/>
-                            <div class="friend-info">
-                                <h3 class="friend-name">Phạm Thị D</h3>
-                            </div>
-                            <div class="friend-actions">
-                                <button class="friend-btn primary" data-action="accept"><i class="bi bi-check-circle-fill"></i> Chấp nhận</button>
-                                <button class="friend-btn" data-action="decline"><i class="bi bi-x-circle-fill"></i> Từ chối</button>
-                            </div>
-                        </div>
+                        <!-- Lời mời kết bạn sẽ được render động từ backend -->
+                        <div class="loading">Đang tải lời mời kết bạn...</div>
                     </div>
                 </section>
 
@@ -179,24 +160,8 @@
                         <div id="security-blocked-users" class="security-view" style="display: none;">
                             <h3>Danh sách người dùng bị chặn</h3>
                             <div class="blocked-users-list">
-                                <div class="friend-item">
-                                    <img src="https://randomuser.me/api/portraits/men/88.jpg" alt="Ảnh người bị chặn" class="friend-avatar"/>
-                                    <div class="friend-info">
-                                        <h3 class="friend-name">Lý Thị E</h3>
-                                    </div>
-                                    <div class="friend-actions">
-                                        <button class="friend-btn" data-action="unblock"><i class="bi bi-unlock-fill"></i> Bỏ chặn</button>
-                                    </div>
-                                </div>
-                                <div class="friend-item">
-                                    <img src="https://randomuser.me/api/portraits/women/89.jpg" alt="Ảnh người bị chặn" class="friend-avatar"/>
-                                    <div class="friend-info">
-                                        <h3 class="friend-name">Trịnh Văn F</h3>
-                                    </div>
-                                    <div class="friend-actions">
-                                        <button class="friend-btn" data-action="unblock"><i class="bi bi-unlock-fill"></i> Bỏ chặn</button>
-                                    </div>
-                                </div>
+                                <!-- Danh sách người dùng bị chặn sẽ được render động từ backend -->
+                                <div class="loading">Đang tải danh sách chặn...</div>
                             </div>
                         </div>
                     </div>
@@ -218,9 +183,12 @@
 <script src="service/websocket.js"></script>
 <script src="service/ConversationService.js"></script>
 <script src="service/messageService.js"></script>
+<script src="service/ProfileService.js"></script>
+<script src="service/FriendshipService.js"></script>
 <script src="controller/chat-list.js"></script>
 <script src="controller/chat-message.js"></script>
 <script src="controller/profile-chat.js"></script>
+<script src="controller/profile-controller.js"></script>
 <!-- Inline Script for UI Interactions -->
 <script>
     document.getElementById("confirm-logout").addEventListener("click", function () {
@@ -255,6 +223,11 @@
                 }
 
                 sidebarMenu.style.display = 'none';
+
+                // Load dữ liệu tương ứng với section
+                if (ProfileController && ProfileController.handleSectionChange) {
+                    ProfileController.handleSectionChange(sectionId);
+                }
             });
         });
 
