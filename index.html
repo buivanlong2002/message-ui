@@ -116,6 +116,10 @@
                             <h3>Chỉnh sửa thông tin cá nhân</h3>
                             <form class="security-form">
                                 <div class="form-group">
+                                    <label for="edit-username">Tên hiển thị</label>
+                                    <input type="text" id="edit-username" placeholder="Nhập tên hiển thị của bạn">
+                                </div>
+                                <div class="form-group">
                                     <label for="edit-avatar">Ảnh đại diện (đường dẫn tương đối)</label>
                                     <input type="text" id="edit-avatar" placeholder="Ví dụ: /uploads/avatar.jpg hoặc để trống">
                                 </div>
@@ -124,12 +128,8 @@
                                     <input type="text" id="edit-cover" placeholder="Ví dụ: /uploads/cover.jpg hoặc để trống">
                                 </div>
                                 <div class="form-group">
-                                    <label for="edit-username">Tên người dùng</label>
-                                    <input type="text" id="edit-username" placeholder="Nhập tên người dùng">
-                                </div>
-                                <div class="form-group">
                                     <label for="edit-bio">Tiểu sử</label>
-                                    <textarea id="edit-bio" rows="3" placeholder="Nhập tiểu sử của bạn"></textarea>
+                                    <textarea id="edit-bio" rows="4" placeholder="Giới thiệu về bản thân..."></textarea>
                                 </div>
                                 <div class="form-actions">
                                     <button type="submit" class="profile-btn primary">Lưu thay đổi</button>
@@ -142,15 +142,16 @@
                             <form class="security-form">
                                 <div class="form-group">
                                     <label for="current-password">Mật khẩu hiện tại</label>
-                                    <input type="password" id="current-password" placeholder="••••••••">
+                                    <input type="password" id="current-password" placeholder="••••••••" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="new-password">Mật khẩu mới</label>
-                                    <input type="password" id="new-password" placeholder="••••••••">
+                                    <input type="password" id="new-password" placeholder="••••••••" minlength="6" required>
+                                    <small class="form-help">Mật khẩu phải có ít nhất 6 ký tự</small>
                                 </div>
                                 <div class="form-group">
                                     <label for="confirm-password">Xác nhận mật khẩu mới</label>
-                                    <input type="password" id="confirm-password" placeholder="••••••••">
+                                    <input type="password" id="confirm-password" placeholder="••••••••" minlength="6" required>
                                 </div>
                                 <div class="form-actions">
                                     <button type="submit" class="profile-btn primary">Cập nhật mật khẩu</button>
@@ -269,9 +270,9 @@
                     view.style.display = view.id === targetId ? 'block' : 'none';
                 });
 
-                // Load dữ liệu thực khi vào tab chỉnh sửa thông tin
-                if (targetId === 'security-edit-info' && ProfileController && ProfileController.loadEditFormData) {
-                    ProfileController.loadEditFormData();
+                // Gọi ProfileController để xử lý navigation
+                if (ProfileController && ProfileController.handleSecurityNavigation) {
+                    ProfileController.handleSecurityNavigation(targetId);
                 }
             });
         });
