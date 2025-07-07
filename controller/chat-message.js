@@ -18,16 +18,16 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
     // Update chat header
     document.getElementById("chat-header").innerHTML = `
         <div class="header-left">
-            <img src="${avatarUrl || '/images/default_avatar.jpg'}"
+            <img src="${getAvatarUrl(avatarUrl)}"
                  alt="Avatar"
                  class="chat-avatar"
-                 onerror="this.onerror=null;this.src='/images/default_avatar.jpg';">
+                 onerror="this.onerror=null;this.src='images/default_avatar.jpg';">
             <span class="header-name">${escapeHTML(name)}</span>
         </div>
         <div class="header-actions">
               <button class="header-btn" onclick="makeCall()"><i class="bi bi-telephone-fill"></i></button>
               <button class="header-btn" onclick="makeVideoCall()"><i class="bi bi-camera-video-fill"></i></button>
-              <button class="header-btn profile-btn" onclick="goToProfile('${name}', ${isGroup ? 'true' : 'false'}, '${avatarUrl}')"><i class="bi bi-person-lines-fill"></i></button>
+              <button class="header-btn profile-btn" onclick="goToProfile('${name}', ${isGroup ? 'true' : 'false'}, '${getAvatarUrl(avatarUrl)}')"><i class="bi bi-person-lines-fill"></i></button>
         </div>
     `;
 
@@ -194,7 +194,7 @@ function renderMessage(msg, userId) {
     }
 
     const senderAvatar = msg.sender?.avatarSender
-        ? `http://localhost:8885${msg.sender.avatarSender}`
+        ? getAvatarUrl(msg.sender.avatarSender)
         : "images/default_avatar.jpg";
     const senderName = msg.sender?.nameSender || "Unknown";
 
@@ -277,7 +277,7 @@ async function sendMessage(chatId) {
 
     tempMessageEl.innerHTML = `
         <div class="message-avatar">
-            <img src="images/default-avatar.jpg" alt="Avatar" class="avatar-image"
+            <img src="images/default_avatar.jpg" alt="Avatar" class="avatar-image"
                  onerror="this.src='images/default_avatar.jpg';"/>
         </div>
         <div class="message-bubble">
@@ -497,3 +497,4 @@ function escapeHTML(str) {
 
 
 }
+

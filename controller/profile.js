@@ -1,6 +1,13 @@
+
+
 async function loadUserProfile() {
     try {
-        const response = await fetchAPI('/users/profile', {
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+            throw new Error('Chưa đăng nhập');
+        }
+        
+        const response = await fetchAPI(`/users/${userId}`, {
             headers: {
                 'Authorization': 'Bearer ' + localStorage.getItem('token')
             }
@@ -17,9 +24,7 @@ async function loadUserProfile() {
         }
 
         if (avatarImgEl) {
-            avatarImgEl.src = user.avatarUrl
-                ? `http://localhost:8885${user.avatarUrl}`
-                : "images/default_avatar.jpg";
+            avatarImgEl.src = getAvatarUrl(user.avatarUrl);
         }
 
         // Gán thông tin vào form chỉnh sửa
@@ -31,7 +36,14 @@ async function loadUserProfile() {
         }
 
         if (editAvatarEl) {
-            editAvatarEl.value = user.avatarUrl || '';
+            // Xử lý avatar URL để chỉ lưu đường dẫn tương đối
+            let avatarUrl = user.avatarUrl || '';
+            if (avatarUrl && avatarUrl.startsWith('http://localhost:8885/')) {
+                avatarUrl = avatarUrl.replace('http://localhost:8885/', '');
+            } else if (avatarUrl && avatarUrl.startsWith('http://localhost:8885')) {
+                avatarUrl = avatarUrl.replace('http://localhost:8885', '');
+            }
+            editAvatarEl.value = avatarUrl;
         }
 
     } catch (error) {

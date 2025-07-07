@@ -1,29 +1,12 @@
 const ProfileService = {
     // 1. Lấy thông tin profile của người dùng hiện tại
     getCurrentUserProfile: async () => {
-        const userId = localStorage.getItem('userId');
-        
-        if (!userId) {
-            throw new Error('Chưa đăng nhập');
-        }
-
-        return await fetchAPI(`/users/profile/${userId}`, {
-            method: "GET",
-        });
+        return await UserService.getCurrentUser();
     },
 
     // 2. Cập nhật thông tin profile
     updateProfile: async (profileData) => {
-        const userId = localStorage.getItem('userId');
-        
-        if (!userId) {
-            throw new Error('Chưa đăng nhập');
-        }
-
-        return await fetchAPI(`/users/profile/${userId}`, {
-            method: "PUT",
-            body: JSON.stringify(profileData),
-        });
+        return await UserService.updateCurrentUser(profileData);
     },
 
     // 3. Đổi mật khẩu
