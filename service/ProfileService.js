@@ -34,7 +34,7 @@ const ProfileService = {
             throw new Error('Chưa đăng nhập');
         }
 
-        return await fetchAPI(`/users/blocked/${userId}`, {
+        return await fetchAPI(`/friendships/blocked-users?userId=${userId}`, {
             method: "GET",
         });
     },
@@ -47,8 +47,8 @@ const ProfileService = {
             throw new Error('Chưa đăng nhập');
         }
 
-        return await fetchAPI(`/users/unblock/${userId}/${blockedUserId}`, {
-            method: "PUT",
+        return await fetchAPI(`/friendships/unblock?senderId=${userId}&receiverId=${blockedUserId}`, {
+            method: "DELETE",
         });
     }
 }; 

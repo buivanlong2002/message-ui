@@ -3,13 +3,48 @@ const ProfileController = {
 
     // Khởi tạo controller
     init: function() {
-        // Kiểm tra authentication
-        if (!this.checkAuthentication()) {
-            return;
-        }
-        
+        console.log('Khởi tạo ProfileController...');
+        this.checkAuthentication();
         this.loadUserProfile();
         this.setupEventListeners();
+        this.initEventListeners();
+    },
+
+    // Khởi tạo event listeners
+    initEventListeners: function() {
+        // Form cập nhật profile
+        const updateProfileForm = document.querySelector('#security-edit-info form');
+        if (updateProfileForm) {
+            updateProfileForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleUpdateProfile();
+            });
+        }
+
+        // Form đổi mật khẩu
+        const changePasswordForm = document.querySelector('#security-change-password form');
+        if (changePasswordForm) {
+            changePasswordForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleChangePassword();
+            });
+        }
+
+        // Search friends
+        const friendsSearch = document.getElementById('friends-search');
+        if (friendsSearch) {
+            friendsSearch.addEventListener('input', (e) => {
+                this.filterFriends(e.target.value);
+            });
+        }
+
+        // Search friend requests
+        const requestsSearch = document.getElementById('friend-requests-search');
+        if (requestsSearch) {
+            requestsSearch.addEventListener('input', (e) => {
+                this.filterFriendRequests(e.target.value);
+            });
+        }
     },
 
     // Kiểm tra authentication
@@ -99,19 +134,19 @@ const ProfileController = {
     },
 
     // Hiển thị danh sách bạn bè
-    displayFriends: function(friendNames) {
+    displayFriends: function(friends) {
         const friendsList = document.querySelector('.friends-list');
         if (!friendsList) return;
 
         friendsList.innerHTML = '';
         
-        if (!friendNames || friendNames.length === 0) {
+        if (!friends || friends.length === 0) {
             friendsList.innerHTML = '<p class="no-data">Chưa có bạn bè nào</p>';
             return;
         }
 
-        friendNames.forEach(friendName => {
-            const friendItem = this.createFriendItemFromName(friendName, 'friend');
+        friends.forEach(friend => {
+            const friendItem = this.createFriendItem(friend, 'friend');
             friendsList.appendChild(friendItem);
         });
     },
@@ -187,7 +222,7 @@ const ProfileController = {
         }
 
         blockedUsers.forEach(user => {
-            const blockedItem = this.createFriendItem(user, 'blocked');
+            const blockedItem = this.createBlockedUserItem(user);
             blockedList.appendChild(blockedItem);
         });
     },
@@ -246,30 +281,31 @@ const ProfileController = {
     createFriendRequestItem: function(request) {
         const item = document.createElement('div');
         item.className = 'friend-item';
-        item.dataset.senderName = request.senderName;
+        item.dataset.senderId = request.senderId;
+        item.dataset.senderName = request.displayName;
 
         // Format thời gian
         const requestTime = new Date(request.requestedAt);
         const timeAgo = this.formatTimeAgo(requestTime);
 
         item.innerHTML = `
-            <img src="images/default_avatar.jpg" alt="Ảnh ${request.senderName}" class="friend-avatar"/>
+            <img src="${getAvatarUrl(request.avatarUrl)}" alt="Ảnh ${request.displayName}" class="friend-avatar"/>
             <div class="friend-info">
-                <h3 class="friend-name">${request.senderName}</h3>
+                <h3 class="friend-name">${request.displayName}</h3>
                 <p class="friend-status">Đã gửi lời mời ${timeAgo}</p>
             </div>
             <div class="friend-actions">
-                <button class="friend-btn primary" data-action="accept" data-sender-name="${request.senderName}">
+                <button class="friend-btn primary" data-action="accept" data-sender-id="${request.senderId}" data-sender-name="${request.displayName}">
                     <i class="bi bi-check-circle-fill"></i> Chấp nhận
                 </button>
-                <button class="friend-btn" data-action="decline" data-sender-name="${request.senderName}">
+                <button class="friend-btn" data-action="decline" data-sender-id="${request.senderId}" data-sender-name="${request.displayName}">
                     <i class="bi bi-x-circle-fill"></i> Từ chối
                 </button>
             </div>
         `;
 
         // Thêm event listeners cho các nút
-        this.addFriendRequestEventListeners(item, request.senderName);
+        this.addFriendRequestEventListeners(item, request.senderId, request.displayName);
         
         return item;
     },
@@ -360,7 +396,7 @@ const ProfileController = {
     },
 
     // Thêm event listeners cho friend request
-    addFriendRequestEventListeners: function(item, senderName) {
+    addFriendRequestEventListeners: function(item, senderId, senderName) {
         const buttons = item.querySelectorAll('.friend-btn');
         buttons.forEach(button => {
             button.addEventListener('click', async (e) => {
@@ -368,7 +404,7 @@ const ProfileController = {
                 const action = button.dataset.action;
                 
                 try {
-                    await this.handleFriendRequestAction(action, senderName);
+                    await this.handleFriendRequestAction(action, senderId, senderName);
                 } catch (error) {
                     console.error('Lỗi khi xử lý hành động:', error.message);
                     alert('Có lỗi xảy ra: ' + error.message);
@@ -396,9 +432,13 @@ const ProfileController = {
                 
             case 'remove':
                 if (confirm('Bạn có chắc muốn xóa người này khỏi danh sách bạn bè?')) {
-                    // Cần thêm API xóa bạn bè
-                    this.showSuccessMessage('Đã xóa khỏi danh sách bạn bè!');
-                    this.loadFriends();
+                    try {
+                        await FriendshipService.removeFriend(currentUserId, targetUserId);
+                        this.showSuccessMessage('Đã xóa khỏi danh sách bạn bè!');
+                        this.loadFriends();
+                    } catch (error) {
+                        this.showErrorMessage(`Lỗi khi xóa bạn bè: ${error.message}`);
+                    }
                 }
                 break;
                 
@@ -434,20 +474,28 @@ const ProfileController = {
     },
 
     // Xử lý các hành động với friend request
-    handleFriendRequestAction: async function(action, senderName) {
+    handleFriendRequestAction: async function(action, senderId, senderName) {
         const currentUserId = localStorage.getItem('userId');
         
         switch(action) {
             case 'accept':
-                // TODO: Cần thêm API chấp nhận/từ chối theo tên người gửi
-                this.showSuccessMessage(`Đã chấp nhận lời mời kết bạn từ ${senderName}!`);
-                this.loadFriendRequests();
+                try {
+                    await FriendshipService.acceptFriendRequest(senderId, currentUserId);
+                    this.showSuccessMessage(`Đã chấp nhận lời mời kết bạn từ ${senderName}!`);
+                    this.loadFriendRequests();
+                } catch (error) {
+                    this.showErrorMessage(`Lỗi khi chấp nhận lời mời: ${error.message}`);
+                }
                 break;
                 
             case 'decline':
-                // TODO: Cần thêm API chấp nhận/từ chối theo tên người gửi
-                this.showSuccessMessage(`Đã từ chối lời mời kết bạn từ ${senderName}!`);
-                this.loadFriendRequests();
+                try {
+                    await FriendshipService.rejectFriendRequest(senderId, currentUserId);
+                    this.showSuccessMessage(`Đã từ chối lời mời kết bạn từ ${senderName}!`);
+                    this.loadFriendRequests();
+                } catch (error) {
+                    this.showErrorMessage(`Lỗi khi từ chối lời mời: ${error.message}`);
+                }
                 break;
         }
     },
@@ -533,8 +581,10 @@ const ProfileController = {
         }
     },
 
-    // Xử lý khi chuyển section
+    // Xử lý thay đổi section
     handleSectionChange: function(sectionId) {
+        console.log('Chuyển sang section:', sectionId);
+        
         switch(sectionId) {
             case 'profile':
                 this.loadUserProfile();
@@ -546,7 +596,8 @@ const ProfileController = {
                 this.loadFriendRequests();
                 break;
             case 'security':
-                this.loadBlockedUsers();
+                // Khi vào section bảo mật, load tab đầu tiên
+                this.loadEditFormData();
                 break;
         }
     },
@@ -554,18 +605,35 @@ const ProfileController = {
     // Load dữ liệu cho form chỉnh sửa khi vào tab bảo mật
     loadEditFormData: async function() {
         try {
-            const response = await ProfileService.getCurrentUserProfile();
-            console.log('Response từ getCurrentUserProfile:', response);
-            
-            if (response.status?.code === '00') {
-                this.populateEditForm(response.data);
+            const userData = await ProfileService.getCurrentUserProfile();
+            if (userData.status?.code === '00') {
+                this.populateEditForm(userData.data);
             } else {
-                console.error('Lỗi khi tải dữ liệu form:', response.status?.displayMessage);
-                this.showErrorMessage('Lỗi khi tải dữ liệu: ' + response.status?.displayMessage);
+                this.showErrorMessage('Lỗi khi tải thông tin: ' + userData.status?.displayMessage);
             }
         } catch (error) {
             console.error('Lỗi khi tải dữ liệu form:', error.message);
             this.showErrorMessage('Lỗi kết nối: ' + error.message);
+        }
+    },
+
+    // Xử lý navigation trong security section
+    handleSecurityNavigation: function(targetId) {
+        console.log('Chuyển sang tab bảo mật:', targetId);
+        
+        switch(targetId) {
+            case 'security-edit-info':
+                this.loadEditFormData();
+                break;
+            case 'security-change-password':
+                // Reset form đổi mật khẩu
+                document.getElementById('current-password').value = '';
+                document.getElementById('new-password').value = '';
+                document.getElementById('confirm-password').value = '';
+                break;
+            case 'security-blocked-users':
+                this.loadBlockedUsers();
+                break;
         }
     },
 
@@ -645,8 +713,18 @@ const ProfileController = {
             const newPassword = document.getElementById('new-password').value;
             const confirmPassword = document.getElementById('confirm-password').value;
 
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                this.showErrorMessage('Vui lòng điền đầy đủ thông tin!');
+                return;
+            }
+
             if (newPassword !== confirmPassword) {
                 this.showErrorMessage('Mật khẩu mới không khớp!');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                this.showErrorMessage('Mật khẩu mới phải có ít nhất 6 ký tự!');
                 return;
             }
 
@@ -730,6 +808,66 @@ const ProfileController = {
             setTimeout(() => {
                 messageDiv.remove();
             }, 5000);
+        }
+    },
+
+    // Tạo element cho người dùng bị chặn
+    createBlockedUserItem: function(user) {
+        const item = document.createElement('div');
+        item.className = 'friend-item';
+        item.dataset.userId = user.id;
+
+        item.innerHTML = `
+            <img src="${getAvatarUrl(user.avatarUrl)}" alt="Ảnh ${user.displayName}" class="friend-avatar"/>
+            <div class="friend-info">
+                <h3 class="friend-name">${user.displayName}</h3>
+                <p class="friend-status">Đã bị chặn</p>
+            </div>
+            <div class="friend-actions">
+                <button class="friend-btn" data-action="unblock" data-user-id="${user.id}" data-user-name="${user.displayName}">
+                    <i class="bi bi-unlock-fill"></i> Bỏ chặn
+                </button>
+            </div>
+        `;
+
+        // Thêm event listeners cho các nút
+        this.addBlockedUserEventListeners(item, user.id, user.displayName);
+        
+        return item;
+    },
+
+    // Thêm event listeners cho người dùng bị chặn
+    addBlockedUserEventListeners: function(item, userId, userName) {
+        const buttons = item.querySelectorAll('.friend-btn');
+        buttons.forEach(button => {
+            button.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const action = button.dataset.action;
+                
+                try {
+                    await this.handleBlockedUserAction(action, userId, userName);
+                } catch (error) {
+                    console.error('Lỗi khi xử lý hành động:', error.message);
+                    alert('Có lỗi xảy ra: ' + error.message);
+                }
+            });
+        });
+    },
+
+    // Xử lý các hành động với người dùng bị chặn
+    handleBlockedUserAction: async function(action, userId, userName) {
+        switch(action) {
+            case 'unblock':
+                if (confirm(`Bạn có chắc muốn bỏ chặn ${userName}?`)) {
+                    try {
+                        await ProfileService.unblockUser(userId);
+                        this.showSuccessMessage(`Đã bỏ chặn ${userName}!`);
+                        this.loadBlockedUsers();
+                    } catch (error) {
+                        this.showErrorMessage(`Lỗi khi bỏ chặn: ${error.message}`);
+                    }
+                }
+                break;
         }
     }
 };
