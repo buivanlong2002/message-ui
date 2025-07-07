@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="icon" type="image/png" sizes="64x64" href="./images/title_logo.png">
     <title>TomoTalk</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
+    <!-- Sử dụng phiên bản Bootstrap Icons mới hơn để có nhiều icon hơn -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
@@ -14,95 +17,160 @@
     <!-- Sidebar -->
     <aside id="sidebar">
         <div id="sidebar-top">
-            <i class="bi bi-list" id="menu-toggle"></i>
+<!--            <i class="bi bi-list" id="menu-toggle"></i>-->
+            <img src="images/logo_TomoTalk.png" id="menu-toggle" style="width: 40px ; height: 30px ;"/>
             <input type="text" id="search-box" placeholder="Tìm kiếm..."/>
         </div>
 
+        <!-- Menu Sidebar (ĐÃ TÁI CẤU TRÚC) -->
         <nav id="sidebar-menu" class="menu-dropdown">
             <ul>
-                <li data-section="profile">Trang cá nhân</li>
-                <li data-section="friends">Bạn bè</li>
-                <li data-section="security">Bảo mật</li>
-                <li data-section="logout">Đăng xuất</li>
+                <li data-section="profile"><i class="bi bi-person-circle"></i> Trang cá nhân</li>
+                <li data-section="friends"><i class="bi bi-people-fill"></i> Bạn bè</li>
+                <li data-section="friend-requests"><i class="bi bi-person-plus-fill"></i> Lời mời kết bạn</li>
+                <li data-section="security"><i class="bi bi-shield-lock-fill"></i> Bảo mật</li>
+                <li data-section="logout"><i class="bi bi-box-arrow-right"></i> Đăng xuất</li>
             </ul>
         </nav>
 
-        <div id="chat-list"></div>
+        <div id="chat-list">
+            <!-- Danh sách các cuộc trò chuyện sẽ được render ở đây -->
+        </div>
     </aside>
 
     <!-- Main Chat Content -->
     <main id="chat-content">
-        <div id="chat-header"></div>
 
+        <div id="chat-header"></div>
         <div class="chat-and-profile">
+
             <!-- Chat Area -->
             <section id="chat-area" class="chat-area">
                 <div id="chat-messages" class="chat-messages"></div>
                 <div id="chat-input-container" class="chat-input-container"></div>
             </section>
-
-            <!-- Chat Profile -->
-            <aside id="profile-content" class="profile-content" style="display: none;">
+            <!-- Chat Profile (cho từng cuộc trò chuyện) -->
+            <aside id="profile-content" class="profile-content">
                 <div class="profile-header">
+                    <h3 id="profile-title"></h3>
                     <button id="profile-close" class="profile-close">×</button>
-                    <h2>Thông tin cuộc trò chuyện</h2>
                 </div>
-                <ul>
-                    <li data-action="search-messages"><i class="bi bi-search"></i> Tìm kiếm tin nhắn</li>
-                    <li data-action="archived"><i class="bi bi-archive"></i> Lưu trữ</li>
-                    <li data-action="photos"><i class="bi bi-image"></i> Ảnh</li>
-                    <li data-action="files"><i class="bi bi-file-earmark"></i> File</li>
-                    <li data-action="links"><i class="bi bi-link"></i> Liên kết</li>
-                    <li data-action="notifications"><i class="bi bi-bell"></i> Thông báo</li>
-                </ul>
+                <div id="profile-details"></div>
             </aside>
         </div>
     </main>
 
-    <!-- Overlay Menu -->
+    <!-- Overlay Menu (Chứa các section chính) -->
     <div id="menu-content-overlay" class="menu-overlay" style="display: none;">
         <div class="menu-content">
             <button id="menu-close" class="menu-close">×</button>
             <div id="menu-section-content" class="menu-section-content">
-                <!-- Profile Section -->
-                <section id="profile" class="menu-section profile-section">
-                    <!-- Ảnh bìa -->
-                    <div class="cover-photo">
-                        <img src="https://images.unsplash.com/photo-1504805572947-34fad45aed93?q=80&w=2070&auto=format&fit=crop" alt="Ảnh bìa" class="cover-img" />
+
+                <!-- 1. Profile Section (ĐÃ LÀM ĐẸP LẠI) -->
+                <section id="profile" class="menu-section">
+                        <div class="cover-photo">
+                            <img src="images/banner.jpg" alt="Ảnh bìa" class="cover-img"/>
+                        </div>
+                        <div class="profile-info">
+                            <img id="avatar" class="avatar" />
+                            <h2 class="username" id="username"></h2>
+                            <div class="profile-actions">
+                                <button id="edit-profile-btn" class="profile-btn primary"><i class="bi bi-pencil-square"></i> Chỉnh sửa trang cá nhân</button>
+                            </div>
+                        </div>
+                </section>
+
+                <!-- 2. Friends Section (ĐÃ TÁCH LỜI MỜI) -->
+                <section id="friends" class="menu-section" style="display: none;">
+                    <h2>Danh sách bạn bè</h2>
+                    <input type="text" id="friend-search" placeholder="Tìm kiếm bạn bè..." class="friend-search-box"/>
+                    <div class="friends-list">
+                        <!-- Danh sách bạn bè sẽ được render động từ backend -->
+                        <div class="loading">Đang tải danh sách bạn bè...</div>
+                    </div>
+                </section>
+
+                <!-- 3. Friend Requests Section (MỤC MỚI) -->
+                <section id="friend-requests" class="menu-section" style="display: none;">
+                    <h2>Lời mời kết bạn</h2>
+                    <input type="text" id="friend-request-search" placeholder="Tìm kiếm lời mời..." class="friend-search-box"/>
+                    <div class="friend-requests-list">
+                        <!-- Lời mời kết bạn sẽ được render động từ backend -->
+                        <div class="loading">Đang tải lời mời kết bạn...</div>
+                    </div>
+                </section>
+
+                <!-- 4. Security Section (ĐÃ HOÀN THIỆN) -->
+                <section id="security" class="menu-section" style="display: none;">
+                    <h2>Bảo mật & Quyền riêng tư</h2>
+                    <!-- Navigation Tabs -->
+                    <div class="security-nav">
+                        <button class="security-nav-item active" data-target="security-edit-info"><i class="bi bi-pencil-square"></i> Thông tin</button>
+                        <button class="security-nav-item" data-target="security-change-password"><i class="bi bi-key-fill"></i> Mật khẩu</button>
+                        <button class="security-nav-item" data-target="security-blocked-users"><i class="bi bi-slash-circle-fill"></i> Quản lý chặn</button>
                     </div>
 
-                    <!-- Thông tin cá nhân -->
-                    <div class="profile-info">
-                        <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Ảnh đại diện" class="avatar" />
-                        <h2 class="username">Nguyễn Văn A</h2>
-                        <p class="profile-bio">"Cuộc sống là một hành trình, không phải là đích đến." 🚀</p>
-
-                        <ul class="profile-details">
-                            <li><i class="bi bi-envelope-fill"></i> <span>nguyenvana@example.com</span></li>
-                            <li><i class="bi bi-telephone-fill"></i> <span>(+84) 123 456 789</span></li>
-                            <li><i class="bi bi-geo-alt-fill"></i> <span>Hà Nội, Việt Nam</span></li>
-                        </ul>
-
-                        <div class="profile-actions">
-                            <button class="profile-btn primary">Nhắn tin</button>
-                            <button class="profile-btn">Thêm bạn bè</button>
+                    <!-- Tab Content -->
+                    <div class="security-content">
+                        <!-- Tab 1: Edit Info View -->
+                        <div id="security-edit-info" class="security-view active">
+                            <h3>Chỉnh sửa thông tin cá nhân</h3>
+                            <form class="security-form">
+                                <div class="form-group">
+                                    <label for="edit-username">Tên hiển thị</label>
+                                    <input type="text" id="edit-username" placeholder="Nhập tên hiển thị của bạn">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-avatar">Ảnh đại diện (đường dẫn tương đối)</label>
+                                    <input type="text" id="edit-avatar" placeholder="Ví dụ: /uploads/avatar.jpg hoặc để trống">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-cover">Ảnh bìa (đường dẫn tương đối)</label>
+                                    <input type="text" id="edit-cover" placeholder="Ví dụ: /uploads/cover.jpg hoặc để trống">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-bio">Tiểu sử</label>
+                                    <textarea id="edit-bio" rows="4" placeholder="Giới thiệu về bản thân..."></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="profile-btn primary">Lưu thay đổi</button>
+                                </div>
+                            </form>
+                        </div>
+                        <!-- Tab 2: Change Password View -->
+                        <div id="security-change-password" class="security-view" style="display: none;">
+                            <h3>Đổi mật khẩu</h3>
+                            <form class="security-form">
+                                <div class="form-group">
+                                    <label for="current-password">Mật khẩu hiện tại</label>
+                                    <input type="password" id="current-password" placeholder="••••••••" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="new-password">Mật khẩu mới</label>
+                                    <input type="password" id="new-password" placeholder="••••••••" minlength="6" required>
+                                    <small class="form-help">Mật khẩu phải có ít nhất 6 ký tự</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirm-password">Xác nhận mật khẩu mới</label>
+                                    <input type="password" id="confirm-password" placeholder="••••••••" minlength="6" required>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="profile-btn primary">Cập nhật mật khẩu</button>
+                                </div>
+                            </form>
+                        </div>
+                        <!-- Tab 3: Blocked Users View -->
+                        <div id="security-blocked-users" class="security-view" style="display: none;">
+                            <h3>Danh sách người dùng bị chặn</h3>
+                            <div class="blocked-users-list">
+                                <!-- Danh sách người dùng bị chặn sẽ được render động từ backend -->
+                                <div class="loading">Đang tải danh sách chặn...</div>
+                            </div>
                         </div>
                     </div>
                 </section>
 
-                <!-- Friends Section -->
-                <section id="friends" class="menu-section" style="display: none;">
-                    <h2>Bạn bè</h2>
-                    <p>Danh sách bạn bè và lời mời kết bạn.</p>
-                </section>
-
-                <!-- Security Section -->
-                <section id="security" class="menu-section" style="display: none;">
-                    <h2>Bảo mật</h2>
-                    <p>Cài đặt bảo mật và quyền riêng tư.</p>
-                </section>
-
-                <!-- Logout Section -->
+                <!-- 5. Logout Section -->
                 <section id="logout" class="menu-section" style="display: none;">
                     <h2>Đăng xuất</h2>
                     <p>Bạn có chắc chắn muốn đăng xuất?</p>
@@ -118,91 +186,122 @@
 <script src="service/websocket.js"></script>
 <script src="service/ConversationService.js"></script>
 <script src="service/messageService.js"></script>
+<script src="service/UserService.js"></script>
+<script src="service/ProfileService.js"></script>
+<script src="service/FriendshipService.js"></script>
 <script src="controller/chat-list.js"></script>
 <script src="controller/chat-message.js"></script>
+<script src="controller/profile-chat.js"></script>
+<script src="controller/profile-controller.js"></script>
+<!-- Inline Script for UI Interactions -->
 <script>
-    // Toggle menu dropdown
-    document.getElementById('menu-toggle').addEventListener('click', () => {
-        const menu = document.getElementById('sidebar-menu');
-        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    document.getElementById("confirm-logout").addEventListener("click", function () {
+        localStorage.clear();
+        window.location.href = "auth.html";
     });
 
-    // Handle sidebar menu click
-    document.querySelectorAll('#sidebar-menu li').forEach(item => {
-        item.addEventListener('click', function () {
-            const section = this.getAttribute('data-section');
-            document.getElementById('menu-content-overlay').style.display = 'flex';
-
-            document.querySelectorAll('.menu-section').forEach(sec => {
-                sec.style.display = sec.id === section ? 'block' : 'none';
-            });
-
-            document.getElementById('sidebar-menu').style.display = 'none';
+    document.addEventListener('DOMContentLoaded', () => {
+        // Toggle menu dropdown
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebarMenu = document.getElementById('sidebar-menu');
+        menuToggle.addEventListener('click', () => {
+            sidebarMenu.style.display = sidebarMenu.style.display === 'block' ? 'none' : 'block';
         });
-    });
 
-    // Close overlay menu
-    document.getElementById('menu-close').addEventListener('click', () => {
-        document.getElementById('menu-content-overlay').style.display = 'none';
-    });
+        const menuOverlay = document.getElementById('menu-content-overlay');
+        const menuSections = document.querySelectorAll('.menu-section');
 
-    // Logout confirmation
-    document.getElementById('confirm-logout').addEventListener('click', () => {
-        alert('Bạn đã đăng xuất!');
-        document.getElementById('menu-content-overlay').style.display = 'none';
-    });
+        // Handle sidebar menu click
+        document.querySelectorAll('#sidebar-menu li').forEach(item => {
+            item.addEventListener('click', function () {
+                const sectionId = this.getAttribute('data-section');
+                menuOverlay.style.display = 'flex';
 
-    // Show chat profile
-    function goToProfile() {
-        const profile = document.getElementById('profile-content');
-        const chat = document.getElementById('chat-area');
-        profile.style.display = 'block';
+                menuSections.forEach(sec => {
+                    sec.style.display = 'none';
+                });
 
-        if (window.innerWidth <= 768) {
-            profile.classList.add('active');
-        } else {
-            chat.classList.add('split');
-        }
-    }
-
-    // Close chat profile
-    document.getElementById('profile-close').addEventListener('click', () => {
-        const profile = document.getElementById('profile-content');
-        const chat = document.getElementById('chat-area');
-        profile.style.display = 'none';
-
-        if (window.innerWidth <= 768) {
-            profile.classList.remove('active');
-        } else {
-            chat.classList.remove('split');
-        }
-    });
-
-    // Handle profile action items
-    document.querySelectorAll('#profile-content li').forEach(item => {
-        item.addEventListener('click', function () {
-            const action = this.getAttribute('data-action');
-            alert(`Đã chọn: ${action}`);
-        });
-    });
-
-    // Auto close profile when switching chats
-    document.getElementById('chat-list').addEventListener('click', (e) => {
-        const chatItem = e.target.closest('.chat-item');
-        if (chatItem) {
-            const profile = document.getElementById('profile-content');
-            const chat = document.getElementById('chat-area');
-
-            if (profile.style.display === 'block') {
-                profile.style.display = 'none';
-                if (window.innerWidth <= 768) {
-                    profile.classList.remove('active');
-                } else {
-                    chat.classList.remove('split');
+                const targetSection = document.getElementById(sectionId);
+                if(targetSection) {
+                    targetSection.style.display = 'block';
                 }
+
+                sidebarMenu.style.display = 'none';
+
+                // Load dữ liệu tương ứng với section
+                if (ProfileController && ProfileController.handleSectionChange) {
+                    ProfileController.handleSectionChange(sectionId);
+                }
+            });
+        });
+
+        // Close overlay menu
+        document.getElementById('menu-close').addEventListener('click', () => {
+            menuOverlay.style.display = 'none';
+        });
+
+        // (MỚI) Chuyển từ Trang cá nhân sang mục Chỉnh sửa
+        document.getElementById('edit-profile-btn').addEventListener('click', () => {
+            menuSections.forEach(sec => sec.style.display = 'none');
+            document.getElementById('security').style.display = 'block';
+
+            // Kích hoạt tab đầu tiên (Chỉnh sửa thông tin) bằng cách giả lập một click
+            const editInfoTab = document.querySelector('.security-nav-item[data-target="security-edit-info"]');
+            if(editInfoTab) {
+                editInfoTab.click();
             }
-        }
+
+            // Load dữ liệu thực cho form chỉnh sửa
+            if (ProfileController && ProfileController.loadEditFormData) {
+                ProfileController.loadEditFormData();
+            }
+        });
+
+        // (MỚI) Logic chuyển tab trong mục Bảo mật
+        const securityNavItems = document.querySelectorAll('.security-nav-item');
+        const securityViews = document.querySelectorAll('.security-view');
+
+        securityNavItems.forEach(item => {
+            item.addEventListener('click', () => {
+                securityNavItems.forEach(nav => nav.classList.remove('active'));
+                item.classList.add('active');
+
+                const targetId = item.getAttribute('data-target');
+                securityViews.forEach(view => {
+                    view.style.display = view.id === targetId ? 'block' : 'none';
+                });
+
+                // Gọi ProfileController để xử lý navigation
+                if (ProfileController && ProfileController.handleSecurityNavigation) {
+                    ProfileController.handleSecurityNavigation(targetId);
+                }
+            });
+        });
+
+        // Logout confirmation
+        document.getElementById('confirm-logout').addEventListener('click', () => {
+            alert('Bạn đã đăng xuất!');
+            menuOverlay.style.display = 'none';
+        });
+
+        // Handle friend action buttons (ví dụ)
+        document.querySelectorAll('.friend-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation(); // Ngăn sự kiện nổi bọt
+                const action = this.getAttribute('data-action');
+                const friendItem = this.closest('.friend-item');
+                const friendName = friendItem ? friendItem.querySelector('.friend-name').textContent : 'ai đó';
+                alert(`Thực hiện hành động '${action}' với ${friendName}.`);
+            });
+        });
+
+
+
     });
+
+
+
+
 </script>
 </body>
 </html>
