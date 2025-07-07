@@ -21,12 +21,12 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
                  alt="Avatar"
                  class="chat-avatar"
                  onerror="this.onerror=null;this.src='images/default_avatar.jpg';">
-            <span class="header-name">${escapeHTML(name)}</span>
+            <span class="header-name">${escapeHtml(name)}</span>
         </div>
         <div class="header-actions">
               <button class="header-btn" onclick="makeCall()"><i class="bi bi-telephone-fill"></i></button>
               <button class="header-btn" onclick="makeVideoCall()"><i class="bi bi-camera-video-fill"></i></button>
-              <button class="header-btn profile-btn" onclick="goToProfile('${name}', ${isGroup ? 'true' : 'false'}, '${getAvatarUrl(avatarUrl)}')"><i class="bi bi-person-lines-fill"></i></button>
+              <button class="header-btn profile-btn" onclick="goToProfile('${escapeHtml(name)}', ${isGroup ? 'true' : 'false'}, '${getAvatarUrl(avatarUrl)}')"><i class="bi bi-person-lines-fill"></i></button>
         </div>
     `;
 
@@ -128,12 +128,12 @@ function renderMessage(msg, userId) {
     const wrapper = document.createElement("div");
     wrapper.className = "message-wrapper " + (isUser ? "user" : "other");
 
-    const time = msg.timeAgo || formatTimeAgo(msg.createdAt); // Sử dụng timeAgo từ server hoặc tính từ createdAt
+    const time = msg.timeAgo || (typeof ProfileController !== 'undefined' && ProfileController.formatTimeAgo ? ProfileController.formatTimeAgo(new Date(msg.createdAt)) : formatTimeAgo(msg.createdAt));
     let contentHtml = "";
 
     switch (msg.messageType) {
         case "TEXT":
-            contentHtml = `<div class="message-text">${escapeHTML(msg.content)}</div>`;
+            contentHtml = `<div class="message-text">${escapeHtml(msg.content)}</div>`;
             break;
         case "IMAGE":
             if (msg.attachments?.length > 0) {
@@ -143,7 +143,7 @@ function renderMessage(msg, userId) {
                                 onerror="this.src='images/image-error.png';"/>`;
                 }).join("");
                 contentHtml = `
-                    ${msg.content ? `<div class="message-text">${escapeHTML(msg.content)}</div><br/>` : ""}
+                    ${msg.content ? `<div class="message-text">${escapeHtml(msg.content)}</div><br/>` : ""}
                     <div class="message-images">${imagesHtml}</div>
                 `;
             } else {
@@ -161,7 +161,7 @@ function renderMessage(msg, userId) {
                             </video>`;
                 }).join("");
                 contentHtml = `
-                    ${msg.content ? `<div class="message-text">${escapeHTML(msg.content)}</div><br/>` : ""}
+                    ${msg.content ? `<div class="message-text">${escapeHtml(msg.content)}</div><br/>` : ""}
                     <div class="message-videos">${videosHtml}</div>
                 `;
             } else {
@@ -174,11 +174,11 @@ function renderMessage(msg, userId) {
                     const url = "http://localhost:8885" + att.url;
                     const fileName = att.originalFileName || att.url.split("/").pop();
                     return `<a href="${url}" target="_blank" class="message-file">
-                                <i class="bi bi-file-earmark-text-fill"></i> ${escapeHTML(fileName)}
+                                <i class="bi bi-file-earmark-text-fill"></i> ${escapeHtml(fileName)}
                             </a>`;
                 }).join("<br/>");
                 contentHtml = `
-                    ${msg.content ? `<div class="message-text">${escapeHTML(msg.content)}</div><br/>` : ""}
+                    ${msg.content ? `<div class="message-text">${escapeHtml(msg.content)}</div><br/>` : ""}
                     <div class="message-files">${filesHtml}</div>
                 `;
             } else {
@@ -187,7 +187,7 @@ function renderMessage(msg, userId) {
             break;
         default:
             contentHtml = msg.content
-                ? `<div class="message-text">${escapeHTML(msg.content)}</div>`
+                ? `<div class="message-text">${escapeHtml(msg.content)}</div>`
                 : `<div class="text-muted">[Không có nội dung]</div>`;
             break;
     }
@@ -199,7 +199,7 @@ function renderMessage(msg, userId) {
 
     const senderInfoHtml = isUser
         ? ""
-        : `<div class="message-sender">${escapeHTML(senderName)}</div>`;
+        : `<div class="message-sender">${escapeHtml(senderName)}</div>`;
 
     const contextMenuHtml = `
         <div class="message-context-menu">
@@ -389,7 +389,11 @@ async function sendMessage(chatId) {
             } else if (type.startsWith("video/")) {
                 fileHtml += `<video controls src="${url}" class="message-video"></video>`;
             } else {
+
                 fileHtml += `<a href="${url}" target="_blank" class="message-file"><i class="bi bi-file-earmark-text-fill"></i> ${escapeHTML(file.name)}</a>`;
+
+                fileHtml += `<a href="${url}" target="_blank">${escapeHtml(file.name)}</a>`;
+
             }
         }
     }
@@ -401,10 +405,10 @@ async function sendMessage(chatId) {
         </div>
         <div class="message-bubble">
             <div class="message-content">
-                ${content ? escapeHTML(content) + "<br/>" : ""}
+                ${content ? escapeHtml(content) + "<br/>" : ""}
                 ${fileHtml}
             </div>
-            <div class="message-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</div>
+            <div class="message-time">${typeof ProfileController !== 'undefined' && ProfileController.formatTimeAgo ? ProfileController.formatTimeAgo(new Date()) : new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</div>
             <div class="message-context-menu">
                 <ul>
                     <li><i class="bi bi-reply-fill"></i> Trả lời</li>
@@ -576,6 +580,7 @@ function escapeHTML(str) {
         '"': '&quot;',
         "'": '&#39;'
     }[tag] || tag));
+
 
 
 }
