@@ -154,6 +154,10 @@ const ProfileController = {
 
         friendsList.innerHTML = '';
 
+        // Lưu cache danh sách bạn bè
+        ProfileController.friendsListCache = friends;
+        localStorage.setItem('friendsList', JSON.stringify(friends));
+
         if (!friends || friends.length === 0) {
             friendsList.innerHTML = '<p class="no-data">Chưa có bạn bè nào</p>';
             return;
@@ -597,6 +601,22 @@ const ProfileController = {
                 // Load đoạn chat
                 loadChat(convId, foundItem, friendName, friendAvatar, isGroup);
 
+                // Nếu chưa tìm thấy chat-item, gọi lại chat list và lặp lại highlight
+                if (!foundItem) {
+                    if (typeof loadChatList === 'function') loadChatList();
+                    let tryCount = 0;
+                    function tryHighlightChatItem() {
+                        const chatItem = document.querySelector(`.chat-item[data-chat-id="${convId}"]`);
+                        if (chatItem) {
+                            document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
+                            chatItem.classList.add('active');
+                        } else if (tryCount < 10) {
+                            tryCount++;
+                            setTimeout(tryHighlightChatItem, 100);
+                        }
+                    }
+                    setTimeout(tryHighlightChatItem, 200);
+                }
             } catch (err) {
                 alert('Có lỗi khi mở đoạn chat: ' + (err?.message || 'Không xác định'));
             }
@@ -975,9 +995,14 @@ const ProfileController = {
         // Hiện section tìm kiếm
         const searchSection = document.getElementById('search-user-section');
         if (searchSection) searchSection.style.display = 'block';
+
+        // Nếu chưa có cache bạn bè, tự động load
+        if (!ProfileController.friendsListCache || !Array.isArray(ProfileController.friendsListCache) || ProfileController.friendsListCache.length === 0) {
+            ProfileController.loadFriends();
+        }
     },
 
-    displaySearchEmailResult: function(users) {
+    displaySearchEmailResult: async function(users) {
         const resultDiv = document.getElementById('search-email-result');
         resultDiv.innerHTML = '';
         if (!users || users.length === 0) {
@@ -994,8 +1019,17 @@ const ProfileController = {
             } catch {}
         }
         const currentUserId = localStorage.getItem('userId');
+        // Lấy danh sách lời mời đã gửi từ backend
+        let sentRequests = [];
+        try {
+            const sentRes = await FriendshipService.getSentRequests(currentUserId);
+            sentRequests = sentRes.data || [];
+        } catch (err) {
+            console.error('Không lấy được danh sách lời mời đã gửi:', err);
+        }
         users.forEach(user => {
-            const isFriend = currentFriends.some(f => f.id === user.id);
+            const isFriend = currentFriends.some(f => String(f.id) === String(user.id));
+            const isSentRequest = sentRequests.some(r => String(r.receiverId) === String(user.id));
             const item = document.createElement('div');
             item.className = 'search-user-item';
             item.innerHTML = `
@@ -1005,6 +1039,8 @@ const ProfileController = {
                     ${isFriend ? `
                         <button class="friend-btn" data-action="message" data-user-id="${user.id}" data-user-name="${user.displayName}"><i class="bi bi-chat-dots"></i> Nhắn tin</button>
                         <button class="friend-btn" data-action="remove" data-user-id="${user.id}" data-user-name="${user.displayName}"><i class="bi bi-person-x"></i> Xóa bạn</button>
+                    ` : isSentRequest ? `
+                        <button class="friend-btn" data-action="cancel-request" data-user-id="${user.id}" data-user-name="${user.displayName}">Hủy lời mời</button>
                     ` : `
                         <button class="friend-btn" data-action="add" data-user-id="${user.id}" data-user-name="${user.displayName}">Kết bạn</button>
                     `}
@@ -1023,14 +1059,28 @@ const ProfileController = {
                             try {
                                 await FriendshipService.removeFriend(currentUserId, user.id);
                                 ProfileController.showSuccessMessage('Đã xóa khỏi danh sách bạn bè!');
-                                // Cập nhật lại giao diện
                                 ProfileController.loadFriends();
                             } catch (error) {
                                 ProfileController.showErrorMessage(`Lỗi khi xóa bạn bè: ${error.message}`);
                             }
                         }
                     } else if (action === 'add') {
-                        // TODO: Gửi lời mời kết bạn
+                        try {
+                            await FriendshipService.sendFriendRequest(currentUserId, user.id);
+                            ProfileController.showSuccessMessage(`Đã gửi lời mời kết bạn tới ${user.displayName}!`);
+                            ProfileController.loadFriendRequests();
+                            ProfileController.displaySearchEmailResult(users);
+                        } catch (error) {
+                            ProfileController.showErrorMessage('Không thể gửi lời mời kết bạn.');
+                        }
+                    } else if (action === 'cancel-request') {
+                        try {
+                            await FriendshipService.cancelFriendRequest(currentUserId, user.id);
+                            ProfileController.showSuccessMessage(`Đã hủy lời mời kết bạn tới ${user.displayName}!`);
+                            ProfileController.displaySearchEmailResult(users);
+                        } catch (error) {
+                            ProfileController.showErrorMessage('Không thể hủy lời mời kết bạn.');
+                        }
                     }
                 });
             });
