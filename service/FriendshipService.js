@@ -35,8 +35,8 @@ const FriendshipService = {
     },
 
     // 6. Xóa bạn bè
-    removeFriend: async (userId, friendId) => {
-        return await fetchAPI(`/friendships/remove?userId=${userId}&friendId=${friendId}`, {
+    removeFriend: async (senderId, receiverId) => {
+        return await fetchAPI(`/friendships/unfriend?senderId=${senderId}&receiverId=${receiverId}`, {
             method: "DELETE"
         });
     }
