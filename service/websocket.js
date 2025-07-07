@@ -4,7 +4,7 @@ const maxRetries = 5;
 const subscribedTopics = new Set();
 
 /**
- * Kết nối tới WebSocket server và khởi tạo subscription cho cuộc trò chuyện
+ * Kết nối tới WebSocket server và khởi tạo subscription cho người dùng
  */
 function connectWebSocket(userId, token) {
     if (retryCount >= maxRetries) {
@@ -24,7 +24,7 @@ function connectWebSocket(userId, token) {
             // Đăng ký nhận danh sách cuộc trò chuyện
             subscribeToConversations(userId);
 
-            // Yêu cầu lấy danh sách cuộc trò chuyện ban đầu
+            // Gửi yêu cầu lấy danh sách cuộc trò chuyện ban đầu
             stompClient.send("/app/conversations/get", {}, JSON.stringify(userId));
         },
         function (error) {
@@ -52,20 +52,26 @@ function subscribeToConversations(userId) {
 }
 
 /**
- * Gửi yêu cầu lấy tin nhắn và đăng ký nhận dữ liệu từ một cuộc trò chuyện cụ thể
+ * Gửi yêu cầu lấy tin nhắn và đăng ký nhận realtime từ một cuộc trò chuyện cụ thể
  */
-function subscribeToConversationMessages(conversationId, userId, page = 0, size = 20) {
+function subscribeToConversationMessages(conversationId, page = 0, size = 20) {
     if (!stompClient || !stompClient.connected) {
         console.warn("⚠️ WebSocket chưa kết nối.");
         return;
     }
 
-    const topic = `/topic/messages/${conversationId}/${userId}`;
+    const topic = `/topic/messages/${conversationId}`;
+
     if (!subscribedTopics.has(topic)) {
         stompClient.subscribe(topic, function (message) {
-            const messages = JSON.parse(message.body);
+            const raw = JSON.parse(message.body);
+            const messages = Array.isArray(raw) ? raw : [raw]; // Xử lý dữ liệu luôn là mảng
+
             const event = new CustomEvent("conversationMessages", {
-                detail: { conversationId, messages }
+                detail: {
+                    conversationId,
+                    messages
+                }
             });
             window.dispatchEvent(event);
         });
@@ -73,14 +79,10 @@ function subscribeToConversationMessages(conversationId, userId, page = 0, size 
         subscribedTopics.add(topic);
     }
 
+    // Gửi yêu cầu lấy tin nhắn cũ
     stompClient.send("/app/messages/get", {}, JSON.stringify({
         conversationId,
-        userId, // 👈 gửi thêm userId
         page,
         size
     }));
-
-
 }
-
-

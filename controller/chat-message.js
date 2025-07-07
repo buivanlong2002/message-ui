@@ -1,4 +1,12 @@
 function loadChat(chatId, element, name, avatarUrl) {
+    // Chuyển chat: gỡ handler cũ
+    window.dispatchEvent(new Event("chatChanged"));
+
+    if (!chatId) {
+        console.warn("Chat ID không hợp lệ.");
+        return;
+    }
+
     // Active item
     document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
     if (element) element.classList.add('active');
@@ -31,22 +39,25 @@ function loadChat(chatId, element, name, avatarUrl) {
     // Set global chatId
     window.currentChatId = chatId;
 
-    // Show chat input container
+    // Show chat input
     const inputContainer = document.getElementById("chat-input-container");
     inputContainer.classList.add('active');
 
-    // Clear previous messages
+    // Reset input state
+    document.getElementById("chat-input").value = "";
+    document.getElementById("chat-input").removeAttribute("data-reply-id");
+    document.getElementById("chat-file").value = null;
+
+    // Clear old messages
     const container = document.getElementById("chat-messages");
     container.innerHTML = '';
 
-    // Subscribe to WebSocket for messages
-    subscribeToConversationMessages(chatId, userId, 0, 50);
+    // Subscribe to WebSocket
+    subscribeToConversationMessages(chatId, 0, 50);
 
-    // Handle incoming messages via WebSocket
+    // Message listener
     const messageHandler = (event) => {
         const { conversationId, messages } = event.detail;
-
-        // Ensure the messages belong to the current chat
         if (conversationId === chatId) {
             if (Array.isArray(messages)) {
                 if (messages.length === 0) {
@@ -60,7 +71,7 @@ function loadChat(chatId, element, name, avatarUrl) {
                     container.appendChild(messageEl);
                 });
 
-                container.scrollTop = container.scrollHeight;
+                container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
             } else {
                 container.innerHTML = `<div class="error-chat">Không thể tải tin nhắn</div>`;
                 console.warn("Lỗi khi lấy tin nhắn: Dữ liệu không đúng định dạng");
@@ -68,20 +79,23 @@ function loadChat(chatId, element, name, avatarUrl) {
         }
     };
 
-    // Add event listener for messages
+    // Gỡ listener cũ nếu có
+    if (window.currentMessageHandler) {
+        window.removeEventListener("conversationMessages", window.currentMessageHandler);
+    }
+
+    window.currentMessageHandler = messageHandler;
     window.addEventListener("conversationMessages", messageHandler);
 
-    // Clean up event listener when switching chats to avoid memory leaks
+    // Cleanup khi unload hoặc đổi chat
     const cleanup = () => {
         window.removeEventListener("conversationMessages", messageHandler);
     };
 
-    // Trigger cleanup when the chat changes or the window unloads
     window.addEventListener('beforeunload', cleanup);
-    window.addEventListener('chatChanged', () => {
-        cleanup();
-    });
+    window.addEventListener('chatChanged', cleanup);
 }
+
 
 // ========================= RENDER MESSAGE =========================
 function renderMessage(msg, userId) {
