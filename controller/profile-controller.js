@@ -2,7 +2,7 @@ const ProfileController = {
 
 
     // Khởi tạo controller
-    init: function() {
+    init: function () {
         console.log('Khởi tạo ProfileController...');
         this.checkAuthentication();
         this.loadUserProfile();
@@ -11,7 +11,7 @@ const ProfileController = {
     },
 
     // Khởi tạo event listeners
-    initEventListeners: function() {
+    initEventListeners: function () {
         // Form cập nhật profile
         const updateProfileForm = document.querySelector('#security-edit-info form');
         if (updateProfileForm) {
@@ -48,34 +48,34 @@ const ProfileController = {
     },
 
     // Kiểm tra authentication
-    checkAuthentication: function() {
+    checkAuthentication: function () {
         const token = localStorage.getItem('token');
         const userId = localStorage.getItem('userId');
-        
+
         if (!token || !userId) {
             console.log('Chưa đăng nhập, chuyển hướng đến trang đăng nhập');
             window.location.href = 'auth.html';
             return false;
         }
-        
+
         return true;
     },
 
     // Load thông tin profile người dùng
-    loadUserProfile: async function() {
+    loadUserProfile: async function () {
         try {
             console.log('Đang tải thông tin profile...');
-            
+
             // Hiển thị loading state
             const username = document.getElementById('username');
             const avatar = document.getElementById('avatar');
-            
+
             if (username) username.textContent = 'Đang tải...';
             if (avatar) avatar.src = 'images/default_avatar.jpg';
-            
+
             const response = await ProfileService.getCurrentUserProfile();
             console.log('Response từ API:', response);
-            
+
             if (response.status?.code === '00') {
                 this.displayUserProfile(response.data);
             } else {
@@ -90,16 +90,16 @@ const ProfileController = {
     },
 
     // Hiển thị thông tin profile
-    displayUserProfile: function(userData) {
+    displayUserProfile: function (userData) {
         const avatar = document.getElementById('avatar');
         const username = document.getElementById('username');
         const coverImg = document.querySelector('.cover-img');
-        
+
         if (avatar) {
             avatar.src = getAvatarUrl(userData.avatarUrl);
             avatar.alt = userData.displayName || 'Avatar';
         }
-        
+
         if (username) {
             username.textContent = userData.displayName || 'Người dùng';
         }
@@ -114,13 +114,13 @@ const ProfileController = {
     },
 
     // Load danh sách bạn bè
-    loadFriends: async function() {
+    loadFriends: async function () {
         const friendsList = document.querySelector('.friends-list');
         if (!friendsList) return;
 
         try {
             friendsList.innerHTML = '<div class="loading">Đang tải danh sách bạn bè...</div>';
-            
+
             const response = await FriendshipService.getFriendships(localStorage.getItem('userId'));
             if (response.status?.code === '00') {
                 this.displayFriends(response.data);
@@ -134,12 +134,12 @@ const ProfileController = {
     },
 
     // Hiển thị danh sách bạn bè
-    displayFriends: function(friends) {
+    displayFriends: function (friends) {
         const friendsList = document.querySelector('.friends-list');
         if (!friendsList) return;
 
         friendsList.innerHTML = '';
-        
+
         if (!friends || friends.length === 0) {
             friendsList.innerHTML = '<p class="no-data">Chưa có bạn bè nào</p>';
             return;
@@ -152,13 +152,13 @@ const ProfileController = {
     },
 
     // Load danh sách lời mời kết bạn
-    loadFriendRequests: async function() {
+    loadFriendRequests: async function () {
         const requestsList = document.querySelector('.friend-requests-list');
         if (!requestsList) return;
 
         try {
             requestsList.innerHTML = '<div class="loading">Đang tải lời mời kết bạn...</div>';
-            
+
             const response = await FriendshipService.getPendingRequests(localStorage.getItem('userId'));
             if (response.status?.code === '00') {
                 this.displayFriendRequests(response.data);
@@ -172,12 +172,12 @@ const ProfileController = {
     },
 
     // Hiển thị danh sách lời mời kết bạn
-    displayFriendRequests: function(requests) {
+    displayFriendRequests: function (requests) {
         const requestsList = document.querySelector('.friend-requests-list');
         if (!requestsList) return;
 
         requestsList.innerHTML = '';
-        
+
         if (!requests || requests.length === 0) {
             requestsList.innerHTML = '<p class="no-data">Không có lời mời kết bạn nào</p>';
             return;
@@ -190,13 +190,13 @@ const ProfileController = {
     },
 
     // Load danh sách người dùng bị chặn
-    loadBlockedUsers: async function() {
+    loadBlockedUsers: async function () {
         const blockedList = document.querySelector('.blocked-users-list');
         if (!blockedList) return;
 
         try {
             blockedList.innerHTML = '<div class="loading">Đang tải danh sách chặn...</div>';
-            
+
             const response = await ProfileService.getBlockedUsers();
             if (response.status?.code === '00') {
                 this.displayBlockedUsers(response.data);
@@ -210,12 +210,12 @@ const ProfileController = {
     },
 
     // Hiển thị danh sách người dùng bị chặn
-    displayBlockedUsers: function(blockedUsers) {
+    displayBlockedUsers: function (blockedUsers) {
         const blockedList = document.querySelector('.blocked-users-list');
         if (!blockedList) return;
 
         blockedList.innerHTML = '';
-        
+
         if (!blockedUsers || blockedUsers.length === 0) {
             blockedList.innerHTML = '<p class="no-data">Không có người dùng nào bị chặn</p>';
             return;
@@ -228,7 +228,7 @@ const ProfileController = {
     },
 
     // Tạo element cho friend/request/blocked user
-    createFriendItem: function(user) {
+    createFriendItem: function (user) {
         const item = document.createElement('div');
         item.className = 'friend-item';
         item.dataset.userId = user.id;
@@ -239,11 +239,11 @@ const ProfileController = {
         item.innerHTML = `
             <img src="${avatarSrc}" alt="Ảnh ${user.displayName}" class="friend-avatar"/>
             <div class="friend-info">
-                <h3 class="friend-name">${user.displayName}</h3>
+                <h3 class="friend-name clickable-profile" data-user-id="${user.id}">${user.displayName}</h3>
                 <p class="friend-status">${user.statusText || ''}</p>
             </div>
             <div class="friend-actions">
-                <button class="friend-btn" data-action="chat" data-user-id="${user.id}" data-user-name="${user.displayName}">
+                <button class="friend-btn" data-action="message" data-user-id="${user.id}" data-user-name="${user.displayName}">
                     <i class="bi bi-chat-dots"></i> Nhắn tin
                 </button>
                 <button class="friend-btn" data-action="remove" data-user-id="${user.id}" data-user-name="${user.displayName}">
@@ -252,11 +252,20 @@ const ProfileController = {
             </div>
         `;
         this.addFriendEventListeners(item, user.id, user.displayName);
+        // Thêm event click vào tên để mở profile
+        const nameEl = item.querySelector('.friend-name.clickable-profile');
+        if (nameEl) {
+            nameEl.style.cursor = 'pointer';
+            nameEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.showUserProfile(user.id);
+            });
+        }
         return item;
     },
 
     // Tạo element cho friend chỉ có tên (từ API getFriendships)
-    createFriendItemFromName: function(friendName, type) {
+    createFriendItemFromName: function (friendName, type) {
         const item = document.createElement('div');
         item.className = 'friend-item';
         item.dataset.friendName = friendName;
@@ -274,12 +283,12 @@ const ProfileController = {
 
         // Thêm event listeners cho các nút
         this.addActionEventListenersForName(item, type, friendName);
-        
+
         return item;
     },
 
     // Tạo element cho lời mời kết bạn (từ API getPendingRequests)
-    createFriendRequestItem: function(request) {
+    createFriendRequestItem: function (request) {
         const item = document.createElement('div');
         item.className = 'friend-item';
         item.dataset.userId = request.senderId;
@@ -308,8 +317,8 @@ const ProfileController = {
     },
 
     // Tạo các nút hành động tùy theo loại
-    getActionButtons: function(type, userId) {
-        switch(type) {
+    getActionButtons: function (type, userId) {
+        switch (type) {
             case 'friend':
                 return `
                     <button class="friend-btn primary" data-action="message" data-user-id="${userId}">
@@ -340,8 +349,8 @@ const ProfileController = {
     },
 
     // Tạo các nút hành động cho friend chỉ có tên
-    getActionButtonsForName: function(type, friendName) {
-        switch(type) {
+    getActionButtonsForName: function (type, friendName) {
+        switch (type) {
             case 'friend':
                 return `
                     <button class="friend-btn primary" data-action="message" data-friend-name="${friendName}">
@@ -357,13 +366,13 @@ const ProfileController = {
     },
 
     // Thêm event listeners cho các nút hành động
-    addActionEventListeners: function(item, type, userId) {
+    addActionEventListeners: function (item, type, userId) {
         const buttons = item.querySelectorAll('.friend-btn');
         buttons.forEach(button => {
             button.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const action = button.dataset.action;
-                
+
                 try {
                     await this.handleFriendAction(action, userId, type);
                 } catch (error) {
@@ -375,13 +384,13 @@ const ProfileController = {
     },
 
     // Thêm event listeners cho các nút hành động (cho friend chỉ có tên)
-    addActionEventListenersForName: function(item, type, friendName) {
+    addActionEventListenersForName: function (item, type, friendName) {
         const buttons = item.querySelectorAll('.friend-btn');
         buttons.forEach(button => {
             button.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const action = button.dataset.action;
-                
+
                 try {
                     await this.handleFriendActionForName(action, friendName, type);
                 } catch (error) {
@@ -393,7 +402,7 @@ const ProfileController = {
     },
 
     // Thêm event listeners cho friend request
-    addFriendRequestEventListeners: function(item) {
+    addFriendRequestEventListeners: function (item) {
         const buttons = item.querySelectorAll('.friend-btn');
         buttons.forEach(button => {
             button.addEventListener('click', async (e) => {
@@ -413,22 +422,22 @@ const ProfileController = {
     },
 
     // Xử lý các hành động với bạn bè
-    handleFriendAction: async function(action, targetUserId, type) {
+    handleFriendAction: async function (action, targetUserId, type) {
         const currentUserId = localStorage.getItem('userId');
-        
-        switch(action) {
+
+        switch (action) {
             case 'accept':
                 await FriendshipService.acceptFriendRequest(targetUserId, currentUserId);
                 this.showSuccessMessage('Đã chấp nhận lời mời kết bạn!');
                 this.loadFriendRequests();
                 break;
-                
+
             case 'decline':
                 await FriendshipService.rejectFriendRequest(targetUserId, currentUserId);
                 this.showSuccessMessage('Đã từ chối lời mời kết bạn!');
                 this.loadFriendRequests();
                 break;
-                
+
             case 'remove':
                 if (confirm('Bạn có chắc muốn xóa người này khỏi danh sách bạn bè?')) {
                     try {
@@ -440,13 +449,13 @@ const ProfileController = {
                     }
                 }
                 break;
-                
+
             case 'unblock':
                 await ProfileService.unblockUser(targetUserId);
                 this.showSuccessMessage('Đã bỏ chặn người dùng!');
                 this.loadBlockedUsers();
                 break;
-                
+
             case 'message':
                 // Chuyển đến chat với người này
                 this.startChatWithUser(targetUserId);
@@ -455,8 +464,8 @@ const ProfileController = {
     },
 
     // Xử lý các hành động với bạn bè (cho friend chỉ có tên)
-    handleFriendActionForName: async function(action, friendName, type) {
-        switch(action) {
+    handleFriendActionForName: async function (action, friendName, type) {
+        switch (action) {
             case 'remove':
                 if (confirm(`Bạn có chắc muốn xóa ${friendName} khỏi danh sách bạn bè?`)) {
                     // TODO: Cần thêm API xóa bạn bè theo tên
@@ -464,7 +473,7 @@ const ProfileController = {
                     this.loadFriends();
                 }
                 break;
-                
+
             case 'message':
                 // Chuyển đến chat với người này
                 this.startChatWithFriend(friendName);
@@ -473,8 +482,8 @@ const ProfileController = {
     },
 
     // Xử lý các hành động với friend request
-    handleFriendRequestAction: async function(action, senderId, receiverId, userName) {
-        switch(action) {
+    handleFriendRequestAction: async function (action, senderId, receiverId, userName) {
+        switch (action) {
             case 'accept':
                 try {
                     await FriendshipService.acceptFriendRequest(senderId, receiverId);
@@ -498,7 +507,7 @@ const ProfileController = {
     },
 
     // Format thời gian
-    formatTimeAgo: function(date) {
+    formatTimeAgo: function (date) {
         const now = new Date();
         const diffMs = now - date;
         const diffMins = Math.floor(diffMs / (1000 * 60));
@@ -509,28 +518,74 @@ const ProfileController = {
         if (diffMins < 60) return `${diffMins} phút trước`;
         if (diffHours < 24) return `${diffHours} giờ trước`;
         if (diffDays < 7) return `${diffDays} ngày trước`;
-        
+
         return date.toLocaleDateString('vi-VN');
     },
 
     // Bắt đầu chat với người dùng
-    startChatWithUser: function(userId) {
-        // Đóng menu overlay
-        document.getElementById('menu-content-overlay').style.display = 'none';
-        
-        // Tìm conversation với user này hoặc tạo mới
-        // Logic này sẽ được xử lý trong ConversationService
-        console.log('Bắt đầu chat với user:', userId);
-    },
+        startChatWithUser: async function(userId) {
+            document.getElementById('menu-content-overlay').style.display = 'none';
 
-    // Bắt đầu chat với bạn bè (chỉ có tên)
-    startChatWithFriend: function(friendName) {
-        // Đóng menu overlay
-        document.getElementById('menu-content-overlay').style.display = 'none';
-        
-        // TODO: Cần tìm conversation với friend này hoặc tạo mới
-        console.log('Bắt đầu chat với friend:', friendName);
-        alert(`Chức năng chat với ${friendName} sẽ được triển khai sau!`);
+            const token = localStorage.getItem('token');
+            const currentUserId = localStorage.getItem('userId');
+            if (!token || !currentUserId) return;
+
+            try {
+                // Gọi API tạo hoặc lấy conversation — trả về object chứ không bọc trong data
+                const convResponse = await ConversationService.getOrCreateOneToOneConversation(currentUserId, userId, token);
+                console.log("Conversation creation response:", convResponse);
+
+                const convId = convResponse?.id;
+                if (!convId) {
+                    alert('Không thể tạo hoặc lấy đoạn chat!');
+                    return;
+                }
+
+                // Lấy danh sách conversation của người dùng
+                const allConvs = await ConversationService.getConversationsByUser(currentUserId, token);
+                let conversation = null;
+
+                if (allConvs && allConvs.data && Array.isArray(allConvs.data)) {
+                    conversation = allConvs.data.find(conv => conv.id === convId);
+                }
+
+                if (!conversation) {
+                    alert('Không thể tìm thấy đoạn chat sau khi tạo!');
+                    return;
+                }
+
+                const isGroup = conversation.isGroup || false;
+
+                // Tìm bạn bè đối diện
+                let friendName = '';
+                let friendAvatar = 'images/default_avatar.jpg';
+
+                if (conversation.members && Array.isArray(conversation.members)) {
+                    const friend = conversation.members.find(m => m.id !== currentUserId);
+                    if (friend) {
+                        friendName = friend.displayName || '';
+                        friendAvatar = friend.avatarUrl || friendAvatar;
+                    }
+                }
+
+                if (!friendName) friendName = conversation.name || '';
+                if (!friendAvatar) friendAvatar = conversation.avatarUrl || 'images/default_avatar.jpg';
+
+                // Tìm chat-item nếu đã hiển thị sidebar
+                let foundItem = null;
+                const chatItems = document.querySelectorAll('.chat-item');
+                chatItems.forEach(item => {
+                    if (item.dataset.chatId === convId) {
+                        foundItem = item;
+                    }
+                });
+
+                // Load đoạn chat
+                loadChat(convId, foundItem, friendName, friendAvatar, isGroup);
+
+            } catch (err) {
+                alert('Có lỗi khi mở đoạn chat: ' + (err?.message || 'Không xác định'));
+            }
     },
 
     // Setup event listeners
@@ -883,6 +938,18 @@ const ProfileController = {
                 }
             });
         });
+    },
+
+    // Hàm mở trang cá nhân của người khác
+    showUserProfile: function(userId) {
+        // Đóng menu overlay nếu đang mở
+        document.getElementById('menu-content-overlay').style.display = 'none';
+        // Gọi hàm load profile của userId này (giả sử đã có hàm loadUserProfileById)
+        if (typeof this.loadUserProfileById === 'function') {
+            this.loadUserProfileById(userId);
+        } else {
+            alert('Chức năng xem trang cá nhân đang được phát triển!');
+        }
     }
 };
 
