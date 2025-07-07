@@ -1426,6 +1426,64 @@ body {
     height: 150px;
 }
 
+/* No data message styling */
+.no-data {
+    text-align: center;
+    color: #6b7280;
+    font-style: italic;
+    padding: 20px;
+    background: rgba(249, 250, 251, 0.8);
+    border-radius: 8px;
+    margin: 10px 0;
+    border: 1px dashed #d1d5db;
+}
+
+/* Loading state */
+.loading {
+    text-align: center;
+    color: #4f46e5;
+    padding: 20px;
+}
+
+.loading::after {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e5e7eb;
+    border-top: 2px solid #4f46e5;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error state */
+.error-message {
+    text-align: center;
+    color: #dc2626;
+    padding: 15px;
+    background: rgba(254, 242, 242, 0.8);
+    border-radius: 8px;
+    margin: 10px 0;
+    border: 1px solid #fecaca;
+}
+
+/* Success message */
+.success-message {
+    text-align: center;
+    color: #059669;
+    padding: 15px;
+    background: rgba(240, 253, 244, 0.8);
+    border-radius: 8px;
+    margin: 10px 0;
+    border: 1px solid #bbf7d0;
+}
+
 @keyframes fadeInProfile {
     from { opacity: 0; }
     to { opacity: 1; }
