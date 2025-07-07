@@ -146,7 +146,7 @@ const ProfileController = {
         }
 
         friends.forEach(friend => {
-            const friendItem = this.createFriendItem(friend, 'friend');
+            const friendItem = this.createFriendItem(friend);
             friendsList.appendChild(friendItem);
         });
     },
@@ -228,29 +228,30 @@ const ProfileController = {
     },
 
     // Tạo element cho friend/request/blocked user
-    createFriendItem: function(user, type) {
+    createFriendItem: function(user) {
         const item = document.createElement('div');
         item.className = 'friend-item';
         item.dataset.userId = user.id;
 
-        const avatar = user.avatarUrl || 'images/default_avatar.jpg';
-        const name = user.displayName || 'Người dùng';
-        const status = user.status || 'Offline';
+        // Nếu không có avatar thì dùng ảnh mặc định
+        const avatarSrc = user.avatarUrl ? getAvatarUrl(user.avatarUrl) : 'images/default_avatar.jpg';
 
         item.innerHTML = `
-            <img src="${getAvatarUrl(avatar)}" alt="Ảnh ${name}" class="friend-avatar"/>
+            <img src="${avatarSrc}" alt="Ảnh ${user.displayName}" class="friend-avatar"/>
             <div class="friend-info">
-                <h3 class="friend-name">${name}</h3>
-                ${type === 'friend' ? `<p class="friend-status">${status}</p>` : ''}
+                <h3 class="friend-name">${user.displayName}</h3>
+                <p class="friend-status">${user.statusText || ''}</p>
             </div>
             <div class="friend-actions">
-                ${this.getActionButtons(type, user.id)}
+                <button class="friend-btn" data-action="chat" data-user-id="${user.id}" data-user-name="${user.displayName}">
+                    <i class="bi bi-chat-dots"></i> Nhắn tin
+                </button>
+                <button class="friend-btn" data-action="remove" data-user-id="${user.id}" data-user-name="${user.displayName}">
+                    <i class="bi bi-person-x"></i> Xóa bạn
+                </button>
             </div>
         `;
-
-        // Thêm event listeners cho các nút
-        this.addActionEventListeners(item, type, user.id);
-        
+        this.addFriendEventListeners(item, user.id, user.displayName);
         return item;
     },
 
@@ -281,32 +282,28 @@ const ProfileController = {
     createFriendRequestItem: function(request) {
         const item = document.createElement('div');
         item.className = 'friend-item';
-        item.dataset.senderId = request.senderId;
-        item.dataset.senderName = request.displayName;
+        item.dataset.userId = request.senderId;
 
-        // Format thời gian
-        const requestTime = new Date(request.requestedAt);
-        const timeAgo = this.formatTimeAgo(requestTime);
+        // Nếu không có avatar thì dùng ảnh mặc định
+        const avatarSrc = request.avatarUrl ? getAvatarUrl(request.avatarUrl) : 'images/default_avatar.jpg';
+        const currentUserId = localStorage.getItem('userId');
 
         item.innerHTML = `
-            <img src="${getAvatarUrl(request.avatarUrl)}" alt="Ảnh ${request.displayName}" class="friend-avatar"/>
+            <img src="${avatarSrc}" alt="Ảnh ${request.displayName}" class="friend-avatar"/>
             <div class="friend-info">
                 <h3 class="friend-name">${request.displayName}</h3>
-                <p class="friend-status">Đã gửi lời mời ${timeAgo}</p>
+                <p class="friend-status">Đã gửi lúc ${request.requestedAt ? new Date(request.requestedAt).toLocaleString() : ''}</p>
             </div>
             <div class="friend-actions">
-                <button class="friend-btn primary" data-action="accept" data-sender-id="${request.senderId}" data-sender-name="${request.displayName}">
-                    <i class="bi bi-check-circle-fill"></i> Chấp nhận
+                <button class="friend-btn" data-action="accept" data-sender-id="${request.senderId}" data-receiver-id="${currentUserId}" data-user-name="${request.displayName}">
+                    <i class="bi bi-person-check"></i> Chấp nhận
                 </button>
-                <button class="friend-btn" data-action="decline" data-sender-id="${request.senderId}" data-sender-name="${request.displayName}">
-                    <i class="bi bi-x-circle-fill"></i> Từ chối
+                <button class="friend-btn" data-action="reject" data-sender-id="${request.senderId}" data-receiver-id="${currentUserId}" data-user-name="${request.displayName}">
+                    <i class="bi bi-person-x"></i> Từ chối
                 </button>
             </div>
         `;
-
-        // Thêm event listeners cho các nút
-        this.addFriendRequestEventListeners(item, request.senderId, request.displayName);
-        
+        this.addFriendRequestEventListeners(item);
         return item;
     },
 
@@ -396,15 +393,17 @@ const ProfileController = {
     },
 
     // Thêm event listeners cho friend request
-    addFriendRequestEventListeners: function(item, senderId, senderName) {
+    addFriendRequestEventListeners: function(item) {
         const buttons = item.querySelectorAll('.friend-btn');
         buttons.forEach(button => {
             button.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const action = button.dataset.action;
-                
+                const senderId = button.dataset.senderId;
+                const receiverId = button.dataset.receiverId;
+                const userName = button.dataset.userName;
                 try {
-                    await this.handleFriendRequestAction(action, senderId, senderName);
+                    await this.handleFriendRequestAction(action, senderId, receiverId, userName);
                 } catch (error) {
                     console.error('Lỗi khi xử lý hành động:', error.message);
                     alert('Có lỗi xảy ra: ' + error.message);
@@ -474,24 +473,22 @@ const ProfileController = {
     },
 
     // Xử lý các hành động với friend request
-    handleFriendRequestAction: async function(action, senderId, senderName) {
-        const currentUserId = localStorage.getItem('userId');
-        
+    handleFriendRequestAction: async function(action, senderId, receiverId, userName) {
         switch(action) {
             case 'accept':
                 try {
-                    await FriendshipService.acceptFriendRequest(senderId, currentUserId);
-                    this.showSuccessMessage(`Đã chấp nhận lời mời kết bạn từ ${senderName}!`);
+                    await FriendshipService.acceptFriendRequest(senderId, receiverId);
+                    this.showSuccessMessage(`Đã chấp nhận lời mời kết bạn từ ${userName}!`);
                     this.loadFriendRequests();
+                    this.loadFriends(); // cập nhật danh sách bạn bè
                 } catch (error) {
                     this.showErrorMessage(`Lỗi khi chấp nhận lời mời: ${error.message}`);
                 }
                 break;
-                
-            case 'decline':
+            case 'reject':
                 try {
-                    await FriendshipService.rejectFriendRequest(senderId, currentUserId);
-                    this.showSuccessMessage(`Đã từ chối lời mời kết bạn từ ${senderName}!`);
+                    await FriendshipService.rejectFriendRequest(senderId, receiverId);
+                    this.showSuccessMessage(`Đã từ chối lời mời kết bạn từ ${userName}!`);
                     this.loadFriendRequests();
                 } catch (error) {
                     this.showErrorMessage(`Lỗi khi từ chối lời mời: ${error.message}`);
@@ -869,6 +866,23 @@ const ProfileController = {
                 }
                 break;
         }
+    },
+
+    // Thêm event listeners cho bạn bè
+    addFriendEventListeners: function(item, userId, userName) {
+        const buttons = item.querySelectorAll('.friend-btn');
+        buttons.forEach(button => {
+            button.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const action = button.dataset.action;
+                try {
+                    await this.handleFriendAction(action, userId);
+                } catch (error) {
+                    console.error('Lỗi khi xử lý hành động:', error.message);
+                    alert('Có lỗi xảy ra: ' + error.message);
+                }
+            });
+        });
     }
 };
 
