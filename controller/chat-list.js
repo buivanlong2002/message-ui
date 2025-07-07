@@ -12,10 +12,12 @@ function loadChatList() {
     connectWebSocket(userId, token);
 }
 
+let allConversations = [];
+
 // Lắng nghe khi WebSocket trả dữ liệu
 window.addEventListener("conversationsData", function (event) {
-    const conversations = event.detail;
-    displayConversations(conversations);
+    allConversations = event.detail;
+    displayConversations(allConversations);
 });
 
 function displayConversations(conversations) {
@@ -35,10 +37,10 @@ function displayConversations(conversations) {
         const trimmedContent = content.length > 10 ? content.slice(0, 10) + "..." : content;
 
         const previewText = lastMessage
-            ? `${sender}: ${trimmedContent}`
+            ? `${escapeHtml(sender)}: ${escapeHtml(trimmedContent)}`
             : "Chưa có tin nhắn";
 
-        const previewTime = lastMessage?.lastMessageTimeAgo || formatTime(createdAt);
+        const previewTime = lastMessage?.lastMessageTimeAgo || (typeof ProfileController !== 'undefined' && ProfileController.formatTimeAgo ? ProfileController.formatTimeAgo(new Date(createdAt)) : formatTime(createdAt));
         const avatarUrl = getAvatarUrl(chat.avatarUrl);
 
         chatItem.onclick = function () {
@@ -53,7 +55,7 @@ function displayConversations(conversations) {
                 onerror="this.onerror=null;this.src='images/default_avatar.jpg';"
             >
             <div style="flex: 1;">
-                <div class="chat-name">${name}</div>
+                <div class="chat-name">${escapeHtml(name)}</div>
                 <div class="chat-preview">${previewText}</div>
             </div>
             <div class="chat-time">${previewTime}</div>
@@ -68,4 +70,29 @@ function formatTime(isoTime) {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-document.addEventListener("DOMContentLoaded", loadChatList);
+function escapeHtml(text) {
+  return text.replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    loadChatList();
+    const searchBox = document.getElementById('search-box');
+    if (searchBox) {
+        searchBox.addEventListener('input', function() {
+            const searchTerm = searchBox.value.trim().toLowerCase();
+            if (!searchTerm) {
+                displayConversations(allConversations);
+                return;
+            }
+            const filtered = allConversations.filter(chat => {
+                const name = (chat.name || "").toLowerCase();
+                return name.includes(searchTerm);
+            });
+            displayConversations(filtered);
+        });
+    }
+});

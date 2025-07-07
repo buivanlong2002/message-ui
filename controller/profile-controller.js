@@ -956,4 +956,15 @@ const ProfileController = {
 // Khởi tạo controller khi DOM loaded
 document.addEventListener('DOMContentLoaded', () => {
     ProfileController.init();
+
+    // Đóng overlay khi click ra ngoài menu-content
+    const overlay = document.getElementById('menu-content-overlay');
+    if (overlay) {
+        overlay.addEventListener('mousedown', function(e) {
+            // Nếu click vào chính overlay (không phải menu-content hoặc con của nó)
+            if (e.target === overlay) {
+                overlay.style.display = 'none';
+            }
+        });
+    }
 }); 

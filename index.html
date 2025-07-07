@@ -239,6 +239,22 @@
             menuOverlay.style.display = 'none';
         });
 
+        // Đóng overlay khi click ra ngoài menu-content
+        menuOverlay.addEventListener('click', function(e) {
+            if (e.target === menuOverlay) {
+                menuOverlay.style.display = 'none';
+            }
+        });
+
+        // Đóng sidebar menu khi click ra ngoài
+        document.addEventListener('click', function(e) {
+            const sidebarMenu = document.getElementById('sidebar-menu');
+            const menuToggle = document.getElementById('menu-toggle');
+            if (sidebarMenu.style.display === 'block' && !sidebarMenu.contains(e.target) && e.target !== menuToggle) {
+                sidebarMenu.style.display = 'none';
+            }
+        });
+
         // (MỚI) Chuyển từ Trang cá nhân sang mục Chỉnh sửa
         document.getElementById('edit-profile-btn').addEventListener('click', () => {
             menuSections.forEach(sec => sec.style.display = 'none');
