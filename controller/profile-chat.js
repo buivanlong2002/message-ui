@@ -1,3 +1,5 @@
+
+
 function goToProfile(name ,isGroup, avatarUrl) {
     isGroup = (isGroup === true || isGroup === 'true');
 
@@ -14,7 +16,7 @@ function goToProfile(name ,isGroup, avatarUrl) {
         profileTitle.innerText = "Thông tin nhóm";
         profileDetails.innerHTML = `
             <div class="profile-avatar-center">
-                <img src="${avatarUrl}" class="avatar-lg" />
+                <img src="${getAvatarUrl(avatarUrl)}" class="avatar-lg" />
                 <h4 class="group-name">${name}</h4>
                 <div class="group-actions">
                     <button><i class="bi bi-bell"></i><br>Tắt thông báo</button>
@@ -66,7 +68,7 @@ function goToProfile(name ,isGroup, avatarUrl) {
         // profileTitle.innerText = "";
         profileDetails.innerHTML = `
             <div class="profile-avatar-center">
-               <img src="${avatarUrl}" class="avatar-lg" />
+               <img src="${getAvatarUrl(avatarUrl)}" class="avatar-lg" />
                 <h4 class="group-name">${name}</h4>
                 <div class="group-actions">
                     <button><i class="bi bi-person-plus"></i><br>Thêm thành viên</button>

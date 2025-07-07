@@ -92,6 +92,7 @@
                 <!-- 3. Friend Requests Section (MỤC MỚI) -->
                 <section id="friend-requests" class="menu-section" style="display: none;">
                     <h2>Lời mời kết bạn</h2>
+                    <input type="text" id="friend-request-search" placeholder="Tìm kiếm lời mời..." class="friend-search-box"/>
                     <div class="friend-requests-list">
                         <!-- Lời mời kết bạn sẽ được render động từ backend -->
                         <div class="loading">Đang tải lời mời kết bạn...</div>
@@ -115,20 +116,20 @@
                             <h3>Chỉnh sửa thông tin cá nhân</h3>
                             <form class="security-form">
                                 <div class="form-group">
-                                    <label for="edit-avatar">Ảnh đại diện (URL)</label>
-                                    <input type="text" id="edit-avatar" value="https://randomuser.me/api/portraits/men/32.jpg">
+                                    <label for="edit-avatar">Ảnh đại diện (đường dẫn tương đối)</label>
+                                    <input type="text" id="edit-avatar" placeholder="Ví dụ: /uploads/avatar.jpg hoặc để trống">
                                 </div>
                                 <div class="form-group">
-                                    <label for="edit-cover">Ảnh bìa (URL)</label>
-                                    <input type="text" id="edit-cover" value="https://images.unsplash.com/photo-1504805572947-34fad45aed93">
+                                    <label for="edit-cover">Ảnh bìa (đường dẫn tương đối)</label>
+                                    <input type="text" id="edit-cover" placeholder="Ví dụ: /uploads/cover.jpg hoặc để trống">
                                 </div>
                                 <div class="form-group">
                                     <label for="edit-username">Tên người dùng</label>
-                                    <input type="text" id="edit-username" value="Nguyễn Văn A">
+                                    <input type="text" id="edit-username" placeholder="Nhập tên người dùng">
                                 </div>
                                 <div class="form-group">
                                     <label for="edit-bio">Tiểu sử</label>
-                                    <textarea id="edit-bio" rows="3">"Cuộc sống là một hành trình, không phải là đích đến." 🚀</textarea>
+                                    <textarea id="edit-bio" rows="3" placeholder="Nhập tiểu sử của bạn"></textarea>
                                 </div>
                                 <div class="form-actions">
                                     <button type="submit" class="profile-btn primary">Lưu thay đổi</button>
@@ -183,6 +184,7 @@
 <script src="service/websocket.js"></script>
 <script src="service/ConversationService.js"></script>
 <script src="service/messageService.js"></script>
+<script src="service/UserService.js"></script>
 <script src="service/ProfileService.js"></script>
 <script src="service/FriendshipService.js"></script>
 <script src="controller/chat-list.js"></script>
@@ -246,6 +248,11 @@
             if(editInfoTab) {
                 editInfoTab.click();
             }
+
+            // Load dữ liệu thực cho form chỉnh sửa
+            if (ProfileController && ProfileController.loadEditFormData) {
+                ProfileController.loadEditFormData();
+            }
         });
 
         // (MỚI) Logic chuyển tab trong mục Bảo mật
@@ -261,6 +268,11 @@
                 securityViews.forEach(view => {
                     view.style.display = view.id === targetId ? 'block' : 'none';
                 });
+
+                // Load dữ liệu thực khi vào tab chỉnh sửa thông tin
+                if (targetId === 'security-edit-info' && ProfileController && ProfileController.loadEditFormData) {
+                    ProfileController.loadEditFormData();
+                }
             });
         });
 

@@ -20,17 +20,24 @@ const FriendshipService = {
         });
     },
 
-    // 4. Lấy danh sách bạn bè của user
+    // 4. Lấy danh sách bạn bè của user (API trả về List<String>)
     getFriendships: async (userId) => {
         return await fetchAPI(`/friendships/friends?userId=${userId}`, {
             method: "GET"
         });
     },
 
-    // 5. Lấy danh sách lời mời kết bạn đang chờ xác nhận
+    // 5. Lấy danh sách lời mời kết bạn đang chờ xác nhận (API trả về List<FriendRequestRequest>)
     getPendingRequests: async (userId) => {
         return await fetchAPI(`/friendships/friend-requests?userId=${userId}`, {
             method: "GET"
+        });
+    },
+
+    // 6. Xóa bạn bè
+    removeFriend: async (userId, friendId) => {
+        return await fetchAPI(`/friendships/remove?userId=${userId}&friendId=${friendId}`, {
+            method: "DELETE"
         });
     }
 };

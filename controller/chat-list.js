@@ -39,7 +39,7 @@ function displayConversations(conversations) {
             : "Chưa có tin nhắn";
 
         const previewTime = lastMessage?.lastMessageTimeAgo || formatTime(createdAt);
-        const avatarUrl = "http://localhost:8885" + chat.avatarUrl;
+        const avatarUrl = getAvatarUrl(chat.avatarUrl);
 
         chatItem.onclick = function () {
             loadChat(chat.id, this, name, avatarUrl , chat.isGroup);
@@ -50,7 +50,7 @@ function displayConversations(conversations) {
                 src="${avatarUrl}"
                 alt="Avatar"
                 class="chat-avatar"
-                onerror="this.onerror=null;this.src='/images/default_avatar.jpg';"
+                onerror="this.onerror=null;this.src='images/default_avatar.jpg';"
             >
             <div style="flex: 1;">
                 <div class="chat-name">${name}</div>
