@@ -1,5 +1,4 @@
 function loadChat(chatId, element, name, avatarUrl, isGroup) {
-
     closeProfile();
     // Active item
     document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
@@ -228,7 +227,9 @@ function renderMessage(msg, userId) {
     return wrapper;
 }
 
-// Hàm hỗ trợ tính timeAgo nếu cần
+/**
+ * Hàm hỗ trợ tính timeAgo nếu cần
+ */
 function formatTimeAgo(dateString) {
     const now = new Date();
     const msgDate = new Date(dateString);
@@ -238,11 +239,129 @@ function formatTimeAgo(dateString) {
 }
 
 /**
+ * Khởi tạo giao diện input
+ */
+document.addEventListener("DOMContentLoaded", () => {
+    const inputContainer = document.getElementById("chat-input-container");
+    if (inputContainer) {
+        inputContainer.classList.remove('active');
+        inputContainer.innerHTML = `
+            <input type="file" id="chat-file" multiple style="display: none;"/>
+            <div class="file-preview-overlay"></div>
+            <button id="file-upload-button" title="Gửi file"><i class="bi bi-paperclip"></i></button>
+            <textarea id="chat-input" placeholder="Nhập tin nhắn..."></textarea>
+            <button id="chat-send-button"><img src="/images/title_logo.png" style="width: 45px; height: 45px;" alt=""/></button>
+        `;
+
+        const fileInput = document.getElementById("chat-file");
+        const previewOverlay = document.querySelector(".file-preview-overlay");
+        const inputField = document.getElementById("chat-input");
+        const sendButton = document.getElementById("chat-send-button");
+
+        // Xử lý sự kiện chọn tệp
+        document.getElementById("file-upload-button").addEventListener("click", () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener("change", () => {
+            previewOverlay.innerHTML = ''; // Xóa các xem trước cũ
+            const files = fileInput.files;
+
+            if (files.length > 0) {
+                previewOverlay.classList.add('active');
+                Array.from(files).forEach((file, index) => {
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'file-preview-item';
+                    previewItem.setAttribute('data-file-index', index);
+
+                    if (file.type.startsWith('image/')) {
+                        const img = document.createElement('img');
+                        img.src = URL.createObjectURL(file);
+                        previewItem.appendChild(img);
+                    } else {
+                        const icon = document.createElement('i');
+                        icon.className = 'bi bi-file-earmark';
+                        const fileName = document.createElement('span');
+                        fileName.className = 'file-name';
+                        fileName.textContent = file.name;
+                        previewItem.appendChild(icon);
+                        previewItem.appendChild(fileName);
+                    }
+
+                    // Nút xóa
+                    const removeButton = document.createElement('button');
+                    removeButton.className = 'remove-file';
+                    removeButton.innerHTML = '<i class="bi bi-x-circle"></i>';
+                    removeButton.addEventListener('click', () => {
+                        previewItem.remove();
+                        // Cập nhật FileList
+                        const dt = new DataTransfer();
+                        Array.from(fileInput.files)
+                            .filter((_, i) => i !== index)
+                            .forEach(f => dt.items.add(f));
+                        fileInput.files = dt.files;
+                        if (!previewOverlay.hasChildNodes()) {
+                            previewOverlay.classList.remove('active');
+                            inputField.style.paddingTop = '12px';
+                        } else {
+                            inputField.style.paddingTop = `${previewOverlay.offsetHeight + 12}px`;
+                        }
+                    });
+                    previewItem.appendChild(removeButton);
+
+                    previewOverlay.appendChild(previewItem);
+                });
+                // Điều chỉnh chiều cao textarea để chứa preview
+                inputField.style.paddingTop = `${previewOverlay.offsetHeight + 12}px`;
+            } else {
+                previewOverlay.classList.remove('active');
+                inputField.style.paddingTop = '12px';
+            }
+        });
+
+        // Điều chỉnh padding-top khi textarea thay đổi kích thước
+        inputField.addEventListener('input', () => {
+            if (previewOverlay.classList.contains('active')) {
+                inputField.style.paddingTop = `${previewOverlay.offsetHeight + 12}px`;
+            } else {
+                inputField.style.paddingTop = '12px';
+            }
+        });
+
+        sendButton.addEventListener('click', () => {
+            const chatId = window.currentChatId;
+            if ((inputField.value.trim() !== "" || fileInput.files.length > 0) && chatId) {
+                sendMessage(chatId);
+            }
+        });
+
+        inputField.addEventListener('keydown', (e) => {
+            if (e.key === "Enter") {
+                if (e.shiftKey) return;
+                e.preventDefault();
+                const chatId = window.currentChatId;
+                if ((inputField.value.trim() !== "" || fileInput.files.length > 0) && chatId) {
+                    sendMessage(chatId);
+                }
+            }
+        });
+    }
+
+    // Kết nối WebSocket khi trang được tải
+    const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("token");
+    if (userId && token) {
+        connectWebSocket(userId, token);
+    }
+});
+
+/**
  * Gửi tin nhắn với optimistic update
  */
 async function sendMessage(chatId) {
     const input = document.getElementById("chat-input");
     const fileInput = document.getElementById("chat-file");
+    const previewOverlay = document.querySelector(".file-preview-overlay");
     const replyId = input.getAttribute("data-reply-id");
     const content = input.value.trim();
     const files = fileInput.files;
@@ -270,7 +389,11 @@ async function sendMessage(chatId) {
             } else if (type.startsWith("video/")) {
                 fileHtml += `<video controls src="${url}" class="message-video"></video>`;
             } else {
+
+                fileHtml += `<a href="${url}" target="_blank" class="message-file"><i class="bi bi-file-earmark-text-fill"></i> ${escapeHTML(file.name)}</a>`;
+
                 fileHtml += `<a href="${url}" target="_blank">${escapeHtml(file.name)}</a>`;
+
             }
         }
     }
@@ -348,72 +471,37 @@ async function sendMessage(chatId) {
                 if (unreadBadge) unreadBadge.remove();
             }
 
-            // Reset input
+            // Reset input and preview
             input.value = "";
             input.removeAttribute("data-reply-id");
             input.placeholder = "Nhập tin nhắn...";
+            input.style.paddingTop = "12px";
             fileInput.value = "";
+            previewOverlay.innerHTML = '';
+            previewOverlay.classList.remove('active');
         } else {
             // Remove temporary message on failure
             const tempEl = document.querySelector(`.message-wrapper[data-message-id="${tempMessageId}"]`);
             if (tempEl) tempEl.remove();
             alert("Gửi tin nhắn thất bại: " + (status?.message || "Không rõ lý do"));
+            // Reset preview
+            input.style.paddingTop = "12px";
+            fileInput.value = "";
+            previewOverlay.innerHTML = '';
+            previewOverlay.classList.remove('active');
         }
     } catch (err) {
         console.error("Lỗi khi gửi tin nhắn:", err);
         const tempEl = document.querySelector(`.message-wrapper[data-message-id="${tempMessageId}"]`);
         if (tempEl) tempEl.remove();
         alert("Có lỗi xảy ra khi gửi tin nhắn.");
+        // Reset preview
+        input.style.paddingTop = "12px";
+        fileInput.value = "";
+        previewOverlay.innerHTML = '';
+        previewOverlay.classList.remove('active');
     }
 }
-
-/**
- * Khởi tạo giao diện input
- */
-document.addEventListener("DOMContentLoaded", () => {
-    const inputContainer = document.getElementById("chat-input-container");
-    if (inputContainer) {
-        inputContainer.classList.remove('active');
-        inputContainer.innerHTML = `
-            <input type="file" id="chat-file" multiple style="display: none;"/>
-            <button id="file-upload-button" title="Gửi file"><i class="bi bi-paperclip"></i></button>
-            <textarea id="chat-input" placeholder="Nhập tin nhắn..."></textarea>
-            <button id="chat-send-button"><img src="/images/title_logo.png"  style="width: 45px ; height: 45px ;" alt=""/></button>
-        `;
-
-        document.getElementById("file-upload-button").addEventListener("click", () => {
-            document.getElementById("chat-file").click();
-        });
-
-        const sendButton = document.getElementById("chat-send-button");
-        const inputField = document.getElementById("chat-input");
-
-        sendButton.addEventListener('click', () => {
-            const chatId = window.currentChatId;
-            if ((inputField.value.trim() !== "" || document.getElementById("chat-file").files.length > 0) && chatId) {
-                sendMessage(chatId);
-            }
-        });
-
-        inputField.addEventListener('keydown', (e) => {
-            if (e.key === "Enter") {
-                if (e.shiftKey) return;
-                e.preventDefault();
-                const chatId = window.currentChatId;
-                if ((inputField.value.trim() !== "" || document.getElementById("chat-file").files.length > 0) && chatId) {
-                    sendMessage(chatId);
-                }
-            }
-        });
-    }
-
-    // Kết nối WebSocket khi trang được tải
-    const userId = localStorage.getItem("userId");
-    const token = localStorage.getItem("token");
-    if (userId && token) {
-        connectWebSocket(userId, token);
-    }
-});
 
 /**
  * Xử lý menu ngữ cảnh
@@ -467,9 +555,6 @@ function closeProfile() {
     }
 }
 
-
-
-
 document.getElementById('profile-close').addEventListener('click', closeProfile);
 
 // Đóng profile-content khi nhấp nút đóng
@@ -485,11 +570,18 @@ document.getElementById('profile-close').addEventListener('click', () => {
     }
 });
 
-function escapeHtml(text) {
-  return text.replace(/&/g, "&amp;")
-             .replace(/</g, "&lt;")
-             .replace(/>/g, "&gt;")
-             .replace(/"/g, "&quot;")
-             .replace(/'/g, "&#039;");
+
+function escapeHTML(str) {
+    if (!str) return '';
+    return str.replace(/[&<>"']/g, tag => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[tag] || tag));
+
+
+
 }
 
