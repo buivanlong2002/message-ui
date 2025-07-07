@@ -27,6 +27,7 @@
                 <li data-section="profile"><i class="bi bi-person-circle"></i> Trang cá nhân</li>
                 <li data-section="friends"><i class="bi bi-people-fill"></i> Bạn bè</li>
                 <li data-section="friend-requests"><i class="bi bi-person-plus-fill"></i> Lời mời kết bạn</li>
+                <li data-section="search-user"><i class="bi bi-search"></i> Tìm người dùng</li>
                 <li data-section="security"><i class="bi bi-shield-lock-fill"></i> Bảo mật</li>
                 <li data-section="logout"><i class="bi bi-box-arrow-right"></i> Đăng xuất</li>
             </ul>
@@ -175,6 +176,16 @@
                     <p>Bạn có chắc chắn muốn đăng xuất?</p>
                     <button id="confirm-logout">Xác nhận</button>
                 </section>
+
+                <!-- Thêm section mới cho tìm kiếm người dùng -->
+                <div class="menu-section" id="search-user-section" style="display:none">
+                    <h2>Tìm người dùng qua email</h2>
+                    <div class="search-by-email">
+                        <input type="text" id="search-email-input" placeholder="Nhập email...">
+                        <button id="search-email-btn">Tìm</button>
+                    </div>
+                    <div id="search-email-result"></div>
+                </div>
             </div>
         </div>
     </div>

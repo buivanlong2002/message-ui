@@ -30,5 +30,10 @@ const UserService = {
             throw new Error('Chưa đăng nhập');
         }
         return await UserService.updateUser(userId, userData);
-    }
+    },
+
+    searchByEmail: async function(email) {
+        // Sử dụng fetchAPI đã chuẩn hóa
+        return await fetchAPI(`/users/search?email=${encodeURIComponent(email)}`);
+    },
 };

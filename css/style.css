@@ -1919,3 +1919,67 @@ body {
         font-size: 11px;
     }
 }
+
+/* --- Tìm kiếm người dùng qua email --- */
+.search-by-email {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    align-items: center;
+}
+#search-email-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 15px;
+}
+#search-email-btn {
+    padding: 8px 18px;
+    background: #4e73df;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+#search-email-btn:hover {
+    background: #2e59d9;
+}
+
+.search-user-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.search-user-item:last-child {
+    border-bottom: none;
+}
+.search-user-item .friend-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #e0e0e0;
+}
+.search-user-item span {
+    flex: 1;
+    font-size: 16px;
+    color: #222;
+}
+.search-user-item .friend-btn {
+    padding: 6px 16px;
+    background: #10b981;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.search-user-item .friend-btn:hover {
+    background: #059669;
+}

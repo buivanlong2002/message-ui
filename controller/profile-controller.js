@@ -45,6 +45,20 @@ const ProfileController = {
                 this.filterFriendRequests(e.target.value);
             });
         }
+        // Search user by email
+        const searchEmailBtn = document.getElementById('search-email-btn');
+        if (searchEmailBtn) {
+            searchEmailBtn.addEventListener('click', async () => {
+                const email = document.getElementById('search-email-input').value.trim();
+                if (!email) return;
+                try {
+                    const result = await UserService.searchByEmail(email);
+                    this.displaySearchEmailResult(result);
+                } catch (err) {
+                    this.showErrorMessage('Lỗi tìm kiếm: ' + err.message);
+                }
+            });
+        }
     },
 
     // Kiểm tra authentication
@@ -651,6 +665,9 @@ const ProfileController = {
                 // Khi vào section bảo mật, load tab đầu tiên
                 this.loadEditFormData();
                 break;
+            case 'search-user':
+                this.showSearchUserSection();
+                break;
         }
     },
 
@@ -950,6 +967,75 @@ const ProfileController = {
         } else {
             alert('Chức năng xem trang cá nhân đang được phát triển!');
         }
+    },
+
+    showSearchUserSection: function() {
+        // Ẩn tất cả các section khác
+        document.querySelectorAll('.menu-section').forEach(sec => sec.style.display = 'none');
+        // Hiện section tìm kiếm
+        const searchSection = document.getElementById('search-user-section');
+        if (searchSection) searchSection.style.display = 'block';
+    },
+
+    displaySearchEmailResult: function(users) {
+        const resultDiv = document.getElementById('search-email-result');
+        resultDiv.innerHTML = '';
+        if (!users || users.length === 0) {
+            resultDiv.innerHTML = '<p>Không tìm thấy người dùng nào.</p>';
+            return;
+        }
+        // Lấy danh sách bạn bè hiện tại từ localStorage (hoặc từ ProfileController nếu có)
+        let currentFriends = [];
+        if (window.ProfileController && ProfileController.friendsListCache) {
+            currentFriends = ProfileController.friendsListCache;
+        } else if (localStorage.getItem('friendsList')) {
+            try {
+                currentFriends = JSON.parse(localStorage.getItem('friendsList'));
+            } catch {}
+        }
+        const currentUserId = localStorage.getItem('userId');
+        users.forEach(user => {
+            const isFriend = currentFriends.some(f => f.id === user.id);
+            const item = document.createElement('div');
+            item.className = 'search-user-item';
+            item.innerHTML = `
+                <img src="${getAvatarUrl(user.avatarUrl)}" alt="Avatar" class="friend-avatar"/>
+                <span>${user.displayName} (${user.email})</span>
+                <div class="friend-actions">
+                    ${isFriend ? `
+                        <button class="friend-btn" data-action="message" data-user-id="${user.id}" data-user-name="${user.displayName}"><i class="bi bi-chat-dots"></i> Nhắn tin</button>
+                        <button class="friend-btn" data-action="remove" data-user-id="${user.id}" data-user-name="${user.displayName}"><i class="bi bi-person-x"></i> Xóa bạn</button>
+                    ` : `
+                        <button class="friend-btn" data-action="add" data-user-id="${user.id}" data-user-name="${user.displayName}">Kết bạn</button>
+                    `}
+                </div>
+            `;
+            // Gắn event cho các nút
+            const actions = item.querySelectorAll('.friend-btn');
+            actions.forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const action = btn.dataset.action;
+                    if (action === 'message') {
+                        ProfileController.startChatWithUser(user.id);
+                    } else if (action === 'remove') {
+                        if (confirm(`Bạn có chắc muốn xóa ${user.displayName} khỏi danh sách bạn bè?`)) {
+                            try {
+                                await FriendshipService.removeFriend(currentUserId, user.id);
+                                ProfileController.showSuccessMessage('Đã xóa khỏi danh sách bạn bè!');
+                                // Cập nhật lại giao diện
+                                ProfileController.loadFriends();
+                            } catch (error) {
+                                ProfileController.showErrorMessage(`Lỗi khi xóa bạn bè: ${error.message}`);
+                            }
+                        }
+                    } else if (action === 'add') {
+                        // TODO: Gửi lời mời kết bạn
+                    }
+                });
+            });
+            resultDiv.appendChild(item);
+        });
     }
 };
 
