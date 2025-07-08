@@ -179,7 +179,7 @@ const ProfileController = {
 
             const response = await FriendshipService.getPendingRequests(localStorage.getItem('userId'));
             if (response.status?.code === '00') {
-                this.displayFriendRequests(response.data);
+                await this.displayFriendRequests(response.data);
             } else {
                 requestsList.innerHTML = `<div class="error-message">Lỗi: ${response.status?.displayMessage || 'Không thể tải lời mời kết bạn'}</div>`;
             }
@@ -190,7 +190,7 @@ const ProfileController = {
     },
 
     // Hiển thị danh sách lời mời kết bạn
-    displayFriendRequests: function (requests) {
+    displayFriendRequests: async function (requests) {
         const requestsList = document.querySelector('.friend-requests-list');
         if (!requestsList) return;
 
@@ -201,10 +201,14 @@ const ProfileController = {
             return;
         }
 
-        requests.forEach(request => {
-            const requestItem = this.createFriendRequestItem(request);
+        // Debug: Log cấu trúc dữ liệu để kiểm tra
+        console.log('Friend requests data structure:', requests);
+
+        // Xử lý từng request một cách tuần tự để đảm bảo async hoạt động đúng
+        for (const request of requests) {
+            const requestItem = await this.createFriendRequestItem(request);
             requestsList.appendChild(requestItem);
-        });
+        }
     },
 
     // Load danh sách người dùng bị chặn
@@ -306,26 +310,108 @@ const ProfileController = {
     },
 
     // Tạo element cho lời mời kết bạn (từ API getPendingRequests)
-    createFriendRequestItem: function (request) {
+    createFriendRequestItem: async function (request) {
         const item = document.createElement('div');
         item.className = 'friend-item';
         item.dataset.userId = request.senderId;
 
-        // Nếu không có avatar thì dùng ảnh mặc định
-        const avatarSrc = request.avatarUrl ? getAvatarUrl(request.avatarUrl) : 'images/default_avatar.jpg';
+        console.log('Processing request:', request);
+        console.log('Request keys:', Object.keys(request));
+        
+        // Xử lý thông tin người gửi lời mời
+        let senderName = '';
+        let senderAvatar = 'images/default_avatar.jpg';
+        
+        // Kiểm tra tất cả các trường hợp có thể có thông tin sender
+        if (request.sender) {
+            // Trường hợp 1: Có object sender
+            console.log('Found sender object:', request.sender);
+            console.log('Sender avatar fields:', {
+                avatarUrl: request.sender.avatarUrl,
+                avatar: request.sender.avatar,
+                imageUrl: request.sender.imageUrl,
+                image: request.sender.image,
+                profileImage: request.sender.profileImage
+            });
+            senderName = request.sender.displayName || request.sender.name || request.sender.username || 'Người dùng';
+            senderAvatar = request.sender.avatarUrl || request.sender.avatar || request.sender.imageUrl || request.sender.image || request.sender.profileImage;
+            senderAvatar = senderAvatar ? getAvatarUrl(senderAvatar) : 'images/default_avatar.jpg';
+        } else if (request.senderInfo) {
+            // Trường hợp 2: Có object senderInfo
+            console.log('Found senderInfo object:', request.senderInfo);
+            console.log('SenderInfo avatar fields:', {
+                avatarUrl: request.senderInfo.avatarUrl,
+                avatar: request.senderInfo.avatar,
+                imageUrl: request.senderInfo.imageUrl,
+                image: request.senderInfo.image,
+                profileImage: request.senderInfo.profileImage
+            });
+            senderName = request.senderInfo.displayName || request.senderInfo.name || request.senderInfo.username || 'Người dùng';
+            senderAvatar = request.senderInfo.avatarUrl || request.senderInfo.avatar || request.senderInfo.imageUrl || request.senderInfo.image || request.senderInfo.profileImage;
+            senderAvatar = senderAvatar ? getAvatarUrl(senderAvatar) : 'images/default_avatar.jpg';
+        } else if (request.user) {
+            // Trường hợp 3: Có object user
+            console.log('Found user object:', request.user);
+            console.log('User avatar fields:', {
+                avatarUrl: request.user.avatarUrl,
+                avatar: request.user.avatar,
+                imageUrl: request.user.imageUrl,
+                image: request.user.image,
+                profileImage: request.user.profileImage
+            });
+            senderName = request.user.displayName || request.user.name || request.user.username || 'Người dùng';
+            senderAvatar = request.user.avatarUrl || request.user.avatar || request.user.imageUrl || request.user.image || request.user.profileImage;
+            senderAvatar = senderAvatar ? getAvatarUrl(senderAvatar) : 'images/default_avatar.jpg';
+        } else {
+            // Trường hợp 4: Thông tin sender được trả về trực tiếp
+            console.log('Using direct sender info');
+            console.log('Direct avatar fields:', {
+                avatarUrl: request.avatarUrl,
+                avatar: request.avatar,
+                imageUrl: request.imageUrl,
+                image: request.image,
+                profileImage: request.profileImage
+            });
+            senderName = request.displayName || request.senderName || request.name || request.username || request.senderDisplayName || 'Người dùng';
+            senderAvatar = request.avatarUrl || request.avatar || request.imageUrl || request.image || request.profileImage;
+            senderAvatar = senderAvatar ? getAvatarUrl(senderAvatar) : 'images/default_avatar.jpg';
+        }
+        
+        console.log('Final sender info:', { senderName, senderAvatar });
+
+        // Nếu không tìm thấy tên người gửi hoặc avatar, thử lấy từ API
+        if ((senderName === 'Người dùng' || senderAvatar === 'images/default_avatar.jpg') && request.senderId) {
+            console.log('Trying to get user info from API for senderId:', request.senderId);
+            try {
+                const userInfo = await this.getUserInfo(request.senderId);
+                if (userInfo) {
+                    console.log('User info from API:', userInfo);
+                    senderName = userInfo.displayName || userInfo.name || userInfo.username || senderName;
+                    const apiAvatar = userInfo.avatarUrl || userInfo.avatar || userInfo.imageUrl || userInfo.image || userInfo.profileImage;
+                    senderAvatar = apiAvatar ? getAvatarUrl(apiAvatar) : senderAvatar;
+                    console.log('Updated sender info from API:', { senderName, senderAvatar });
+                }
+            } catch (error) {
+                console.warn('Không thể lấy thông tin người dùng từ API:', error.message);
+            }
+        }
+
         const currentUserId = localStorage.getItem('userId');
 
         item.innerHTML = `
-            <img src="${avatarSrc}" alt="Ảnh ${request.displayName}" class="friend-avatar"/>
+            <img src="${senderAvatar}" alt="Ảnh ${senderName}" class="friend-avatar"/>
             <div class="friend-info">
-                <h3 class="friend-name">${request.displayName}</h3>
+                <h3 class="friend-name">${senderName}</h3>
                 <p class="friend-status">Đã gửi lúc ${request.requestedAt ? new Date(request.requestedAt).toLocaleString() : ''}</p>
             </div>
             <div class="friend-actions">
-                <button class="friend-btn" data-action="accept" data-sender-id="${request.senderId}" data-receiver-id="${currentUserId}" data-user-name="${request.displayName}">
+                <button class="friend-btn" data-action="message" data-sender-id="${request.senderId}" data-receiver-id="${currentUserId}" data-user-name="${senderName}">
+                    <i class="bi bi-chat-dots"></i> Nhắn tin
+                </button>
+                <button class="friend-btn" data-action="accept" data-sender-id="${request.senderId}" data-receiver-id="${currentUserId}" data-user-name="${senderName}">
                     <i class="bi bi-person-check"></i> Chấp nhận
                 </button>
-                <button class="friend-btn" data-action="reject" data-sender-id="${request.senderId}" data-receiver-id="${currentUserId}" data-user-name="${request.displayName}">
+                <button class="friend-btn" data-action="reject" data-sender-id="${request.senderId}" data-receiver-id="${currentUserId}" data-user-name="${senderName}">
                     <i class="bi bi-person-x"></i> Từ chối
                 </button>
             </div>
@@ -476,7 +562,14 @@ const ProfileController = {
 
             case 'message':
                 // Chuyển đến chat với người này
-                this.startChatWithUser(targetUserId);
+                // Thử lấy thông tin người dùng từ API trước khi mở chat
+                try {
+                    const userInfo = await this.getUserInfo(targetUserId);
+                    this.startChatWithUser(targetUserId, userInfo);
+                } catch (error) {
+                    console.warn('Không thể lấy thông tin người dùng, mở chat với thông tin cơ bản');
+                    this.startChatWithUser(targetUserId);
+                }
                 break;
         }
     },
@@ -521,6 +614,17 @@ const ProfileController = {
                     this.showErrorMessage(`Lỗi khi từ chối lời mời: ${error.message}`);
                 }
                 break;
+            case 'message':
+                // Chuyển đến chat với người này
+                // Thử lấy thông tin người dùng từ API trước khi mở chat
+                try {
+                    const userInfo = await this.getUserInfo(senderId);
+                    this.startChatWithUser(senderId, userInfo);
+                } catch (error) {
+                    console.warn('Không thể lấy thông tin người dùng, mở chat với thông tin cơ bản');
+                    this.startChatWithUser(senderId);
+                }
+                break;
         }
     },
 
@@ -541,85 +645,130 @@ const ProfileController = {
     },
 
     // Bắt đầu chat với người dùng
-        startChatWithUser: async function(userId) {
-            document.getElementById('menu-content-overlay').style.display = 'none';
+    startChatWithUser: async function(userId, userInfo = null) {
+        document.getElementById('menu-content-overlay').style.display = 'none';
 
-            const token = localStorage.getItem('token');
-            const currentUserId = localStorage.getItem('userId');
-            if (!token || !currentUserId) return;
+        const token = localStorage.getItem('token');
+        const currentUserId = localStorage.getItem('userId');
+        if (!token || !currentUserId) return;
 
-            try {
-                // Gọi API tạo hoặc lấy conversation — trả về object chứ không bọc trong data
-                const convResponse = await ConversationService.getOrCreateOneToOneConversation(currentUserId, userId, token);
-                console.log("Conversation creation response:", convResponse);
+        try {
+            // Gọi API tạo hoặc lấy conversation — trả về object chứ không bọc trong data
+            const convResponse = await ConversationService.getOrCreateOneToOneConversation(currentUserId, userId, token);
+            console.log("Conversation creation response:", convResponse);
 
-                const convId = convResponse?.id;
-                if (!convId) {
-                    alert('Không thể tạo hoặc lấy đoạn chat!');
-                    return;
-                }
+            const convId = convResponse?.id;
+            if (!convId) {
+                alert('Không thể tạo hoặc lấy đoạn chat!');
+                return;
+            }
 
-                // Lấy danh sách conversation của người dùng
-                const allConvs = await ConversationService.getConversationsByUser(currentUserId, token);
-                let conversation = null;
+            // Lấy danh sách conversation của người dùng
+            const allConvs = await ConversationService.getConversationsByUser(currentUserId, token);
+            let conversation = null;
 
-                if (allConvs && allConvs.data && Array.isArray(allConvs.data)) {
-                    conversation = allConvs.data.find(conv => conv.id === convId);
-                }
+            if (allConvs && allConvs.data && Array.isArray(allConvs.data)) {
+                conversation = allConvs.data.find(conv => conv.id === convId);
+            }
 
-                if (!conversation) {
-                    alert('Không thể tìm thấy đoạn chat sau khi tạo!');
-                    return;
-                }
+            if (!conversation) {
+                alert('Không thể tìm thấy đoạn chat sau khi tạo!');
+                return;
+            }
 
-                const isGroup = conversation.isGroup || false;
+            const isGroup = conversation.isGroup || false;
 
-                // Tìm bạn bè đối diện
-                let friendName = '';
-                let friendAvatar = 'images/default_avatar.jpg';
+            // Tìm bạn bè đối diện - ưu tiên thông tin từ userInfo nếu có
+            let friendName = '';
+            let friendAvatar = 'images/default_avatar.jpg';
 
+            // Nếu có thông tin người dùng từ tìm kiếm, sử dụng thông tin đó
+            if (userInfo) {
+                friendName = userInfo.displayName || '';
+                friendAvatar = userInfo.avatarUrl ? getAvatarUrl(userInfo.avatarUrl) : 'images/default_avatar.jpg';
+            } else {
+                // Tìm từ conversation members
                 if (conversation.members && Array.isArray(conversation.members)) {
                     const friend = conversation.members.find(m => m.id !== currentUserId);
                     if (friend) {
                         friendName = friend.displayName || '';
-                        friendAvatar = friend.avatarUrl || friendAvatar;
+                        friendAvatar = friend.avatarUrl ? getAvatarUrl(friend.avatarUrl) : friendAvatar;
                     }
                 }
-
-                if (!friendName) friendName = conversation.name || '';
-                if (!friendAvatar) friendAvatar = conversation.avatarUrl || 'images/default_avatar.jpg';
-
-                // Tìm chat-item nếu đã hiển thị sidebar
-                let foundItem = null;
-                const chatItems = document.querySelectorAll('.chat-item');
-                chatItems.forEach(item => {
-                    if (item.dataset.chatId === convId) {
-                        foundItem = item;
-                    }
-                });
-
-                // Load đoạn chat
-                loadChat(convId, foundItem, friendName, friendAvatar, isGroup);
-
-                // Nếu chưa tìm thấy chat-item, gọi lại chat list và lặp lại highlight
-                if (!foundItem) {
-                    if (typeof loadChatList === 'function') loadChatList();
-                    let tryCount = 0;
-                    function tryHighlightChatItem() {
-                        const chatItem = document.querySelector(`.chat-item[data-chat-id="${convId}"]`);
-                        if (chatItem) {
-                            document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
-                            chatItem.classList.add('active');
-                        } else if (tryCount < 10) {
-                            tryCount++;
-                            setTimeout(tryHighlightChatItem, 100);
+                
+                // Nếu vẫn không có thông tin, thử lấy từ API
+                if (!friendName || friendName === '') {
+                    try {
+                        const userInfoFromAPI = await this.getUserInfo(userId);
+                        if (userInfoFromAPI) {
+                            friendName = userInfoFromAPI.displayName || userInfoFromAPI.name || userInfoFromAPI.username || 'Người dùng';
+                            const apiAvatar = userInfoFromAPI.avatarUrl || userInfoFromAPI.avatar || userInfoFromAPI.imageUrl || userInfoFromAPI.image || userInfoFromAPI.profileImage;
+                            friendAvatar = apiAvatar ? getAvatarUrl(apiAvatar) : friendAvatar;
                         }
+                    } catch (error) {
+                        console.warn('Không thể lấy thông tin người dùng từ API:', error.message);
                     }
-                    setTimeout(tryHighlightChatItem, 200);
                 }
-            } catch (err) {
-                alert('Có lỗi khi mở đoạn chat: ' + (err?.message || 'Không xác định'));
             }
+
+            if (!friendName) friendName = conversation.name || 'Người dùng';
+            if (!friendAvatar || friendAvatar === 'images/default_avatar.jpg') {
+                friendAvatar = conversation.avatarUrl ? getAvatarUrl(conversation.avatarUrl) : 'images/default_avatar.jpg';
+            }
+
+            // Tìm chat-item nếu đã hiển thị sidebar
+            let foundItem = null;
+            const chatItems = document.querySelectorAll('.chat-item');
+            chatItems.forEach(item => {
+                if (item.dataset.chatId === convId) {
+                    foundItem = item;
+                }
+            });
+
+            // Load đoạn chat
+            loadChat(convId, foundItem, friendName, friendAvatar, isGroup);
+
+            // Highlight chat item trong sidebar
+            this.highlightChatItem(convId);
+
+        } catch (err) {
+            alert('Có lỗi khi mở đoạn chat: ' + (err?.message || 'Không xác định'));
+        }
+    },
+
+    // Highlight chat item trong sidebar
+    highlightChatItem: function(convId) {
+        // Nếu chưa tìm thấy chat-item, gọi lại chat list và lặp lại highlight
+        let foundItem = document.querySelector(`.chat-item[data-chat-id="${convId}"]`);
+        
+        if (!foundItem) {
+            if (typeof loadChatList === 'function') {
+                loadChatList();
+            }
+            
+            let tryCount = 0;
+            const tryHighlightChatItem = () => {
+                const chatItem = document.querySelector(`.chat-item[data-chat-id="${convId}"]`);
+                if (chatItem) {
+                    // Remove active class from all chat items
+                    document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
+                    // Add active class to current chat item
+                    chatItem.classList.add('active');
+                    
+                    // Scroll to the chat item if needed
+                    chatItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else if (tryCount < 15) { // Tăng số lần thử
+                    tryCount++;
+                    setTimeout(tryHighlightChatItem, 100);
+                }
+            };
+            setTimeout(tryHighlightChatItem, 200);
+        } else {
+            // Nếu đã tìm thấy, highlight ngay lập tức
+            document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
+            foundItem.classList.add('active');
+            foundItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
     },
 
     // Setup event listeners
@@ -1002,6 +1151,37 @@ const ProfileController = {
         }
     },
 
+    // Refresh danh sách bạn bè cache
+    refreshFriendsListCache: async function() {
+        try {
+            const response = await FriendshipService.getFriendships(localStorage.getItem('userId'));
+            if (response.status?.code === '00') {
+                ProfileController.friendsListCache = response.data || [];
+                localStorage.setItem('friendsList', JSON.stringify(response.data || []));
+            } else {
+                console.warn('Không thể refresh danh sách bạn bè:', response.status?.displayMessage);
+            }
+        } catch (error) {
+            console.warn('Lỗi khi refresh danh sách bạn bè:', error.message);
+        }
+    },
+
+    // Lấy thông tin người dùng từ API nếu cần
+    getUserInfo: async function(userId) {
+        try {
+            const response = await UserService.getByUserId(userId);
+            if (response.status?.code === '00') {
+                return response.data;
+            } else {
+                console.warn('Không thể lấy thông tin người dùng:', response.status?.displayMessage);
+                return null;
+            }
+        } catch (error) {
+            console.warn('Lỗi khi lấy thông tin người dùng:', error.message);
+            return null;
+        }
+    },
+
     displaySearchEmailResult: async function(users) {
         const resultDiv = document.getElementById('search-email-result');
         resultDiv.innerHTML = '';
@@ -1009,36 +1189,102 @@ const ProfileController = {
             resultDiv.innerHTML = '<p>Không tìm thấy người dùng nào.</p>';
             return;
         }
-        // Lấy danh sách bạn bè hiện tại từ localStorage (hoặc từ ProfileController nếu có)
-        let currentFriends = [];
-        if (window.ProfileController && ProfileController.friendsListCache) {
-            currentFriends = ProfileController.friendsListCache;
-        } else if (localStorage.getItem('friendsList')) {
-            try {
-                currentFriends = JSON.parse(localStorage.getItem('friendsList'));
-            } catch {}
-        }
+        
+        // Refresh danh sách bạn bè cache nếu cần
+        await this.refreshFriendsListCache();
+        
+        // Lấy danh sách bạn bè hiện tại từ cache
+        let currentFriends = ProfileController.friendsListCache || [];
         const currentUserId = localStorage.getItem('userId');
         // Lấy danh sách lời mời đã gửi từ backend
         let sentRequests = [];
         try {
             const sentRes = await FriendshipService.getSentRequests(currentUserId);
-            sentRequests = sentRes.data || [];
+            if (sentRes && sentRes.status && sentRes.status.code === '00') {
+                sentRequests = sentRes.data || [];
+            } else {
+                console.warn('API trả về lỗi khi lấy danh sách lời mời đã gửi:', sentRes?.status?.displayMessage);
+            }
         } catch (err) {
-            console.error('Không lấy được danh sách lời mời đã gửi:', err);
+            console.warn('Không lấy được danh sách lời mời đã gửi:', err.message);
+            // Không làm crash ứng dụng, chỉ log warning và tiếp tục với sentRequests = []
+        }
+
+        // Lấy danh sách lời mời đã nhận từ backend
+        let receivedRequests = [];
+        try {
+            const receivedRes = await FriendshipService.getPendingRequests(currentUserId);
+            if (receivedRes && receivedRes.status && receivedRes.status.code === '00') {
+                receivedRequests = receivedRes.data || [];
+            } else {
+                console.warn('API trả về lỗi khi lấy danh sách lời mời đã nhận:', receivedRes?.status?.displayMessage);
+            }
+        } catch (err) {
+            console.warn('Không lấy được danh sách lời mời đã nhận:', err.message);
+            // Không làm crash ứng dụng, chỉ log warning và tiếp tục với receivedRequests = []
+        }
+
+        // Lấy danh sách người dùng bị chặn
+        let blockedUsers = [];
+        try {
+            const blockedRes = await ProfileService.getBlockedUsers();
+            if (blockedRes && blockedRes.status && blockedRes.status.code === '00') {
+                blockedUsers = blockedRes.data || [];
+            } else {
+                console.warn('API trả về lỗi khi lấy danh sách người dùng bị chặn:', blockedRes?.status?.displayMessage);
+            }
+        } catch (err) {
+            console.warn('Không lấy được danh sách người dùng bị chặn:', err.message);
+        }
+
+        // Lấy danh sách người đã chặn mình
+        let blockedByUsers = [];
+        try {
+            const blockedByRes = await ProfileService.getBlockedByUsers();
+            if (blockedByRes && blockedByRes.status && blockedByRes.status.code === '00') {
+                blockedByUsers = blockedByRes.data || [];
+            } else {
+                console.warn('API trả về lỗi khi lấy danh sách người đã chặn mình:', blockedByRes?.status?.displayMessage);
+            }
+        } catch (err) {
+            console.warn('Không lấy được danh sách người đã chặn mình:', err.message);
         }
         users.forEach(user => {
             const isFriend = currentFriends.some(f => String(f.id) === String(user.id));
-            const isSentRequest = sentRequests.some(r => String(r.receiverId) === String(user.id));
+            
+            // Kiểm tra xem đã gửi lời mời kết bạn cho user này chưa
+            const isSentRequest = sentRequests.some(r => {
+                // Có thể API trả về receiverId hoặc receiver.id
+                const receiverId = r.receiverId || r.receiver?.id;
+                return String(receiverId) === String(user.id);
+            });
+            
+            // Kiểm tra xem user này đã gửi lời mời kết bạn cho mình chưa
+            const isReceivedRequest = receivedRequests.some(r => {
+                // Có thể API trả về senderId hoặc sender.id
+                const senderId = r.senderId || r.sender?.id;
+                return String(senderId) === String(user.id);
+            });
+
+            // Kiểm tra trạng thái chặn
+            const isBlockedByMe = blockedUsers.some(b => String(b.id) === String(user.id));
+            const isBlockedByUser = blockedByUsers.some(b => String(b.id) === String(user.id));
             const item = document.createElement('div');
             item.className = 'search-user-item';
             item.innerHTML = `
                 <img src="${getAvatarUrl(user.avatarUrl)}" alt="Avatar" class="friend-avatar"/>
-                <span>${user.displayName} (${user.email})</span>
+                <span class="user-name-clickable" data-user-id="${user.id}" data-user-name="${user.displayName}">${user.displayName} (${user.email})</span>
                 <div class="friend-actions">
-                    ${isFriend ? `
+                    ${isBlockedByUser ? `
+                        <span class="blocked-notice">Bạn đã bị chặn</span>
+                    ` : isBlockedByMe ? `
+                        <button class="friend-btn" data-action="unblock" data-user-id="${user.id}" data-user-name="${user.displayName}"><i class="bi bi-person-check"></i> Bỏ chặn</button>
+                    ` : isFriend ? `
                         <button class="friend-btn" data-action="message" data-user-id="${user.id}" data-user-name="${user.displayName}"><i class="bi bi-chat-dots"></i> Nhắn tin</button>
                         <button class="friend-btn" data-action="remove" data-user-id="${user.id}" data-user-name="${user.displayName}"><i class="bi bi-person-x"></i> Xóa bạn</button>
+                    ` : isReceivedRequest ? `
+                        <button class="friend-btn" data-action="accept" data-user-id="${user.id}" data-user-name="${user.displayName}"><i class="bi bi-check-circle"></i> Chấp nhận</button>
+                        <button class="friend-btn" data-action="reject" data-user-id="${user.id}" data-user-name="${user.displayName}"><i class="bi bi-x-circle"></i> Từ chối</button>
                     ` : isSentRequest ? `
                         <button class="friend-btn" data-action="cancel-request" data-user-id="${user.id}" data-user-name="${user.displayName}">Hủy lời mời</button>
                     ` : `
@@ -1052,38 +1298,79 @@ const ProfileController = {
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     const action = btn.dataset.action;
-                    if (action === 'message') {
-                        ProfileController.startChatWithUser(user.id);
-                    } else if (action === 'remove') {
-                        if (confirm(`Bạn có chắc muốn xóa ${user.displayName} khỏi danh sách bạn bè?`)) {
-                            try {
+                    
+                    try {
+                        if (action === 'message') {
+                            ProfileController.startChatWithUser(user.id, user);
+                        } else if (action === 'remove') {
+                            if (confirm(`Bạn có chắc muốn xóa ${user.displayName} khỏi danh sách bạn bè?`)) {
                                 await FriendshipService.removeFriend(currentUserId, user.id);
                                 ProfileController.showSuccessMessage('Đã xóa khỏi danh sách bạn bè!');
-                                ProfileController.loadFriends();
-                            } catch (error) {
-                                ProfileController.showErrorMessage(`Lỗi khi xóa bạn bè: ${error.message}`);
+                                // Refresh lại danh sách để cập nhật trạng thái
+                                await ProfileController.refreshFriendsListCache();
+                                ProfileController.displaySearchEmailResult(users);
                             }
-                        }
-                    } else if (action === 'add') {
-                        try {
+                        } else if (action === 'add') {
                             await FriendshipService.sendFriendRequest(currentUserId, user.id);
                             ProfileController.showSuccessMessage(`Đã gửi lời mời kết bạn tới ${user.displayName}!`);
-                            ProfileController.loadFriendRequests();
+                            // Refresh lại danh sách để cập nhật trạng thái
+                            await ProfileController.refreshFriendsListCache();
                             ProfileController.displaySearchEmailResult(users);
-                        } catch (error) {
-                            ProfileController.showErrorMessage('Không thể gửi lời mời kết bạn.');
-                        }
-                    } else if (action === 'cancel-request') {
-                        try {
+                        } else if (action === 'cancel-request') {
                             await FriendshipService.cancelFriendRequest(currentUserId, user.id);
                             ProfileController.showSuccessMessage(`Đã hủy lời mời kết bạn tới ${user.displayName}!`);
+                            // Refresh lại danh sách để cập nhật trạng thái
                             ProfileController.displaySearchEmailResult(users);
-                        } catch (error) {
-                            ProfileController.showErrorMessage('Không thể hủy lời mời kết bạn.');
+                        } else if (action === 'accept') {
+                            await FriendshipService.acceptFriendRequest(user.id, currentUserId);
+                            ProfileController.showSuccessMessage(`Đã chấp nhận lời mời kết bạn từ ${user.displayName}!`);
+                            // Refresh lại danh sách để cập nhật trạng thái
+                            await ProfileController.refreshFriendsListCache();
+                            ProfileController.displaySearchEmailResult(users);
+                        } else if (action === 'reject') {
+                            await FriendshipService.rejectFriendRequest(user.id, currentUserId);
+                            ProfileController.showSuccessMessage(`Đã từ chối lời mời kết bạn từ ${user.displayName}!`);
+                            // Refresh lại danh sách để cập nhật trạng thái
+                            ProfileController.displaySearchEmailResult(users);
+                        } else if (action === 'unblock') {
+                            if (confirm(`Bạn có chắc muốn bỏ chặn ${user.displayName}?`)) {
+                                await ProfileService.unblockUser(user.id);
+                                ProfileController.showSuccessMessage(`Đã bỏ chặn ${user.displayName}!`);
+                                // Refresh lại danh sách để cập nhật trạng thái
+                                ProfileController.displaySearchEmailResult(users);
+                            }
                         }
+                    } catch (error) {
+                        console.error('Lỗi khi xử lý hành động:', error);
+                        ProfileController.showErrorMessage(`Lỗi: ${error.message}`);
                     }
                 });
             });
+
+            // Thêm event listener cho việc click vào tên người dùng
+            const userNameElement = item.querySelector('.user-name-clickable');
+            if (userNameElement) {
+                userNameElement.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const userId = userNameElement.dataset.userId;
+                    const userName = userNameElement.dataset.userName;
+                    
+                    try {
+                        // Lấy thông tin chi tiết của người dùng
+                        const userInfo = await ProfileController.getUserInfo(userId);
+                        if (userInfo) {
+                            // Hiển thị thông tin cơ bản trong alert
+                            alert(`Thông tin người dùng:\nTên: ${userInfo.displayName}\nEmail: ${userInfo.email}${userInfo.phoneNumber ? '\nSĐT: ' + userInfo.phoneNumber : ''}${userInfo.bio ? '\nGiới thiệu: ' + userInfo.bio : ''}`);
+                        } else {
+                            ProfileController.showErrorMessage('Không thể lấy thông tin người dùng');
+                        }
+                    } catch (error) {
+                        console.error('Lỗi khi mở trang cá nhân:', error);
+                        ProfileController.showErrorMessage(`Lỗi: ${error.message}`);
+                    }
+                });
+            }
+
             resultDiv.appendChild(item);
         });
     }

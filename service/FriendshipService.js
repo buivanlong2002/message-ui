@@ -41,43 +41,17 @@ const FriendshipService = {
         });
     },
 
-    getSentRequests: async function(userId) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/friendships/sent-requests`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return await response.json();
-        } catch (error) {
-            throw new Error(`Không thể lấy danh sách lời mời đã gửi: ${error.message}`);
-        }
+    // 7. Lấy danh sách lời mời đã gửi
+    getSentRequests: async (senderId) => {
+        return await fetchAPI(`/friendships/sent-requests?senderId=${senderId}`, {
+            method: "GET"
+        });
     },
 
-    cancelFriendRequest: async function(senderId, receiverId) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/friendships/reject`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({
-                    senderId: senderId,
-                    receiverId: receiverId
-                })
-            });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return await response.json();
-        } catch (error) {
-            throw new Error(`Không thể hủy lời mời kết bạn: ${error.message}`);
-        }
+    // 8. Hủy lời mời kết bạn
+    cancelFriendRequest: async (senderId, receiverId) => {
+        return await fetchAPI(`/friendships/reject?senderId=${senderId}&receiverId=${receiverId}`, {
+            method: "POST"
+        });
     }
 };
