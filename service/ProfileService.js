@@ -50,5 +50,18 @@ const ProfileService = {
         return await fetchAPI(`/friendships/unblock?senderId=${userId}&receiverId=${blockedUserId}`, {
             method: "DELETE",
         });
+    },
+
+    // 6. Lấy danh sách người đã chặn mình
+    getBlockedByUsers: async () => {
+        const userId = localStorage.getItem('userId');
+        
+        if (!userId) {
+            throw new Error('Chưa đăng nhập');
+        }
+
+        return await fetchAPI(`/friendships/blocked-by-users?userId=${userId}`, {
+            method: "GET",
+        });
     }
 }; 

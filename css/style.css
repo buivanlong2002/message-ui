@@ -2784,3 +2784,43 @@ body {
         background: linear-gradient(135deg, #0c3c60, #1a7cb3);
     }
 }
+
+.blocked-notice {
+    color: #dc2626;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 12px;
+    background: rgba(220, 38, 38, 0.1);
+    border-radius: 6px;
+    border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+    .blocked-notice {
+        color: #f87171;
+        background: rgba(220, 38, 38, 0.2);
+        border-color: rgba(220, 38, 38, 0.4);
+    }
+}
+
+.user-name-clickable {
+    cursor: pointer;
+    color: #105085;
+    font-weight: 500;
+    transition: color 0.3s ease, text-decoration 0.3s ease;
+}
+
+.user-name-clickable:hover {
+    color: #0c3c60;
+    text-decoration: underline;
+}
+
+@media (prefers-color-scheme: dark) {
+    .user-name-clickable {
+        color: #1a7cb3;
+    }
+    
+    .user-name-clickable:hover {
+        color: #e5e7eb;
+    }
+}
