@@ -15,6 +15,15 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
     }
 
     // Update chat header
+    let groupId = chatId;
+    let isCreator = false;
+    if (isGroup && typeof allConversations !== 'undefined') {
+        const conv = allConversations.find(c => c.id === chatId);
+        const userId = localStorage.getItem('userId');
+        if (conv) {
+            isCreator = conv.createdBy === userId;
+        }
+    }
     document.getElementById("chat-header").innerHTML = `
         <div class="header-left">
             <img src="${getAvatarUrl(avatarUrl)}"
@@ -26,7 +35,7 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
         <div class="header-actions">
               <button class="header-btn" onclick="makeCall()"><i class="bi bi-telephone-fill"></i></button>
               <button class="header-btn" onclick="makeVideoCall()"><i class="bi bi-camera-video-fill"></i></button>
-              <button class="header-btn profile-btn" onclick="goToProfile('${escapeHtml(name)}', ${isGroup ? 'true' : 'false'}, '${getAvatarUrl(avatarUrl)}')"><i class="bi bi-person-lines-fill"></i></button>
+              <button class="header-btn profile-btn" onclick="goToProfile('${escapeHtml(name)}', ${isGroup ? 'true' : 'false'}, '${getAvatarUrl(avatarUrl)}', '${groupId}', ${isCreator})"><i class="bi bi-person-lines-fill"></i></button>
         </div>
     `;
 
