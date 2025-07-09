@@ -12,7 +12,7 @@ function connectWebSocket(userId, token) {
         return;
     }
 
-    const socket = new SockJS("http://localhost:8885/ws");
+    const socket = new SockJS("https://cms-service.up.railway.app/ws");
     stompClient = Stomp.over(socket);
 
     stompClient.connect(

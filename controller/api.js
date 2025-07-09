@@ -1,5 +1,5 @@
 const API_CONFIG = {
-    BASE_URL: 'http://localhost:8885/api',
+    BASE_URL: 'https://cms-service.up.railway.app/api',
 };
 
 async function fetchAPI(endpoint, options = {}) {
@@ -78,11 +78,11 @@ function getAvatarUrl(avatarPath) {
     
     // Nếu là đường dẫn tương đối, thêm base URL
     if (avatarPath.startsWith('/')) {
-        return `http://localhost:8885${avatarPath}`;
+        return `https://cms-service.up.railway.app${avatarPath}`;
     }
     
     // Nếu không có / ở đầu, thêm /
-    return `http://localhost:8885/${avatarPath}`;
+    return `https://cms-service.up.railway.app/${avatarPath}`;
 }
 
 // Function kiểm tra authentication
