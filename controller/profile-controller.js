@@ -884,18 +884,18 @@ const ProfileController = {
 
         // Xử lý avatar URL để chỉ lưu đường dẫn tương đối
         let avatarUrl = userData.avatarUrl || '';
-        if (avatarUrl && avatarUrl.startsWith('http://localhost:8885/')) {
-            avatarUrl = avatarUrl.replace('http://localhost:8885/', '');
-        } else if (avatarUrl && avatarUrl.startsWith('http://localhost:8885')) {
-            avatarUrl = avatarUrl.replace('http://localhost:8885', '');
+        if (avatarUrl && avatarUrl.startsWith('https://cms-service.up.railway.app/')) {
+            avatarUrl = avatarUrl.replace('https://cms-service.up.railway.app/', '');
+        } else if (avatarUrl && avatarUrl.startsWith('https://cms-service.up.railway.app')) {
+            avatarUrl = avatarUrl.replace('https://cms-service.up.railway.app', '');
         }
 
         // Xử lý cover URL để chỉ lưu đường dẫn tương đối
         let coverUrl = userData.coverUrl || '';
-        if (coverUrl && coverUrl.startsWith('http://localhost:8885/')) {
-            coverUrl = coverUrl.replace('http://localhost:8885/', '');
-        } else if (coverUrl && coverUrl.startsWith('http://localhost:8885')) {
-            coverUrl = coverUrl.replace('http://localhost:8885', '');
+        if (coverUrl && coverUrl.startsWith('https://cms-service.up.railway.app/')) {
+            coverUrl = coverUrl.replace('https://cms-service.up.railway.app/', '');
+        } else if (coverUrl && coverUrl.startsWith('https://cms-service.up.railway.app')) {
+            coverUrl = coverUrl.replace('https://cms-service.up.railway.app', '');
         }
 
         if (editAvatar) editAvatar.value = avatarUrl;

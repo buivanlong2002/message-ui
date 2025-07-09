@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => switchForm('login-container'
 
 // === FETCH API CHUNG ===
 async function fetchAPI(path, options) {
-  const response = await fetch(`http://localhost:8885/api${path}`, {
+      const response = await fetch(`https://cms-service.up.railway.app/api${path}`, {
     headers: {
       'Content-Type': 'application/json',
     },
@@ -114,7 +114,7 @@ function handleRegister() {
 
   const data = { displayName, email, phoneNumber: phone, avatarUrl, password };
 
-  fetch('http://localhost:8885/api/auth/register', {
+          fetch('https://cms-service.up.railway.app/api/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)

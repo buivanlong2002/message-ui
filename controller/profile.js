@@ -38,10 +38,10 @@ async function loadUserProfile() {
         if (editAvatarEl) {
             // Xử lý avatar URL để chỉ lưu đường dẫn tương đối
             let avatarUrl = user.avatarUrl || '';
-            if (avatarUrl && avatarUrl.startsWith('http://localhost:8885/')) {
-                avatarUrl = avatarUrl.replace('http://localhost:8885/', '');
-            } else if (avatarUrl && avatarUrl.startsWith('http://localhost:8885')) {
-                avatarUrl = avatarUrl.replace('http://localhost:8885', '');
+                    if (avatarUrl && avatarUrl.startsWith('https://cms-service.up.railway.app/')) {
+            avatarUrl = avatarUrl.replace('https://cms-service.up.railway.app/', '');
+        } else if (avatarUrl && avatarUrl.startsWith('https://cms-service.up.railway.app')) {
+            avatarUrl = avatarUrl.replace('https://cms-service.up.railway.app', '');
             }
             editAvatarEl.value = avatarUrl;
         }

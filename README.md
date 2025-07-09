@@ -139,14 +139,14 @@ python -m http.server 8000
 ### Base URL
 ```javascript
 const API_CONFIG = {
-    BASE_URL: 'http://localhost:8885/api',
+    BASE_URL: 'https://cms-service.up.railway.app/api',
     TIMEOUT: 10000 // 10 seconds
 };
 ```
 
 ### WebSocket
 ```javascript
-const WS_URL = 'http://localhost:8885/ws';
+const WS_URL = 'https://cms-service.up.railway.app/ws';
 ```
 
 ## 🎯 Keyboard Shortcuts

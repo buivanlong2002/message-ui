@@ -147,7 +147,7 @@ function renderMessage(msg, userId) {
         case "IMAGE":
             if (msg.attachments?.length > 0) {
                 const imagesHtml = msg.attachments.map(att => {
-                    const url = "http://localhost:8885" + att.url;
+                    const url = "https://cms-service.up.railway.app" + att.url;
                     return `<img src="${url}" alt="Hình ảnh" class="message-image"
                                 onerror="this.src='images/image-error.png';"/>`;
                 }).join("");
@@ -162,7 +162,7 @@ function renderMessage(msg, userId) {
         case "VIDEO":
             if (msg.attachments?.length > 0) {
                 const videosHtml = msg.attachments.map(att => {
-                    const url = "http://localhost:8885" + att.url;
+                    const url = "https://cms-service.up.railway.app" + att.url;
                     return `<video controls class="message-video"
                                    onerror="this.poster='images/video-error.png';">
                                 <source src="${url}" type="video/mp4">
@@ -180,7 +180,7 @@ function renderMessage(msg, userId) {
         case "FILE":
             if (msg.attachments?.length > 0) {
                 const filesHtml = msg.attachments.map(att => {
-                    const url = "http://localhost:8885" + att.url;
+                    const url = "https://cms-service.up.railway.app" + att.url;
                     const fileName = att.originalFileName || att.url.split("/").pop();
                     return `<a href="${url}" target="_blank" class="message-file">
                                 <i class="bi bi-file-earmark-text-fill"></i> ${escapeHtml(fileName)}
