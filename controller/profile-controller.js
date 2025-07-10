@@ -190,25 +190,36 @@ const ProfileController = {
     },
 
     // Hiển thị danh sách lời mời kết bạn
-    displayFriendRequests: async function (requests) {
-        const requestsList = document.querySelector('.friend-requests-list');
-        if (!requestsList) return;
+        displayFriendRequests: async function (requests) {
+            const requestsList = document.querySelector('.friend-requests-list');
+            if (!requestsList) return;
 
-        requestsList.innerHTML = '';
+            requestsList.innerHTML = '';
 
-        if (!requests || requests.length === 0) {
-            requestsList.innerHTML = '<p class="no-data">Không có lời mời kết bạn nào</p>';
-            return;
-        }
+            if (!requests || requests.length === 0) {
+                requestsList.innerHTML = '<p class="no-data">Không có lời mời kết bạn nào</p>';
+                return;
+            }
 
-        // Debug: Log cấu trúc dữ liệu để kiểm tra
-        console.log('Friend requests data structure:', requests);
+            // Lọc trùng theo id người gửi (ưu tiên sender -> senderInfo -> user)
+            const uniqueRequests = [];
+            const seen = new Set();
 
-        // Xử lý từng request một cách tuần tự để đảm bảo async hoạt động đúng
-        for (const request of requests) {
-            const requestItem = await this.createFriendRequestItem(request);
-            requestsList.appendChild(requestItem);
-        }
+            for (const req of requests) {
+                const senderId = req.sender?.id || req.senderInfo?.id || req.user?.id || req.senderId;
+
+                if (!senderId) continue; // bỏ qua nếu không xác định được sender
+
+                if (!seen.has(senderId)) {
+                    seen.add(senderId);
+                    uniqueRequests.push(req);
+                }
+            }
+
+            for (const request of uniqueRequests) {
+                const requestItem = await this.createFriendRequestItem(request);
+                requestsList.appendChild(requestItem);
+            }
     },
 
     // Load danh sách người dùng bị chặn
@@ -819,7 +830,12 @@ const ProfileController = {
     // Xử lý thay đổi section
     handleSectionChange: function(sectionId) {
         console.log('Chuyển sang section:', sectionId);
-        
+        // Kiểm tra nếu section đã active thì không load lại
+        const sectionSelector = `#${sectionId}.menu-section`;
+        const sectionEl = document.querySelector(sectionSelector);
+        if (sectionEl && sectionEl.style.display === 'block') {
+            return;
+        }
         switch(sectionId) {
             case 'profile':
                 this.loadUserProfile();
@@ -884,18 +900,18 @@ const ProfileController = {
 
         // Xử lý avatar URL để chỉ lưu đường dẫn tương đối
         let avatarUrl = userData.avatarUrl || '';
-        if (avatarUrl && avatarUrl.startsWith('https://cms-service.up.railway.app/')) {
-            avatarUrl = avatarUrl.replace('https://cms-service.up.railway.app/', '');
-        } else if (avatarUrl && avatarUrl.startsWith('https://cms-service.up.railway.app')) {
-            avatarUrl = avatarUrl.replace('https://cms-service.up.railway.app', '');
+        if (avatarUrl && avatarUrl.startsWith('http://localhost:8885/')) {
+            avatarUrl = avatarUrl.replace('http://localhost:8885/', '');
+        } else if (avatarUrl && avatarUrl.startsWith('http://localhost:8885')) {
+            avatarUrl = avatarUrl.replace('http://localhost:8885', '');
         }
 
         // Xử lý cover URL để chỉ lưu đường dẫn tương đối
         let coverUrl = userData.coverUrl || '';
-        if (coverUrl && coverUrl.startsWith('https://cms-service.up.railway.app/')) {
-            coverUrl = coverUrl.replace('https://cms-service.up.railway.app/', '');
-        } else if (coverUrl && coverUrl.startsWith('https://cms-service.up.railway.app')) {
-            coverUrl = coverUrl.replace('https://cms-service.up.railway.app', '');
+        if (coverUrl && coverUrl.startsWith('http://localhost:8885/')) {
+            coverUrl = coverUrl.replace('http://localhost:8885/', '');
+        } else if (coverUrl && coverUrl.startsWith('http://localhost:8885')) {
+            coverUrl = coverUrl.replace('http://localhost:8885', '');
         }
 
         if (editAvatar) editAvatar.value = avatarUrl;

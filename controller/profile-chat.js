@@ -119,7 +119,7 @@ function goToProfile(name ,isGroup, avatarUrl, groupId, isCreator) {
             }
         }
         // Sau khi render xong profile nhóm, gọi hàm loadGroupMembers(groupId)
-        loadGroupMembers(groupId);
+        loadGroupMembers(groupId, isCreator);
         // Gọi luôn hàm loadConversationAttachments cho nhóm
         loadConversationAttachments(groupId);
     } else {
@@ -180,9 +180,65 @@ function goToProfile(name ,isGroup, avatarUrl, groupId, isCreator) {
         // Sau khi render xong, luôn gán sự kiện cho nút chặn nếu tồn tại:
         const blockBtn = document.getElementById('block-user-btn');
         if (blockBtn) {
-            blockBtn.onclick = function() {
-                alert('Chức năng đang phát triển!');
-            };
+            // Kiểm tra trạng thái chặn hiện tại
+            const currentUser = JSON.parse(localStorage.getItem('user'));
+            const targetUserId = groupId;
+            fetch(`${API_CONFIG.BASE_URL}/blocked-users?userId=${currentUser.id}`)
+                .then(res => res.json())
+                .then(data => {
+                    let isBlocked = false;
+                    if (data.status && data.status.success && Array.isArray(data.data)) {
+                        isBlocked = data.data.some(u => u.blockedUserId === targetUserId);
+                    }
+                    updateBlockBtnUI(blockBtn, isBlocked);
+                    blockBtn.onclick = async function() {
+                        if (!isBlocked) {
+                            // Gọi API chặn
+                            if (!confirm('Bạn có chắc muốn chặn người này?')) return;
+                            try {
+                                const res = await fetch(`${API_CONFIG.BASE_URL}/friendships/block`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                                    },
+                                    body: JSON.stringify({ userId: currentUser.id, blockedUserId: targetUserId })
+                                });
+                                const data2 = await res.json();
+                                if (data2.status && data2.status.success) {
+                                    isBlocked = true;
+                                    updateBlockBtnUI(blockBtn, true);
+                                    alert('Đã chặn thành công!');
+                                } else {
+                                    alert(data2.status?.displayMessage || 'Chặn thất bại!');
+                                }
+                            } catch (err) {
+                                alert('Lỗi khi chặn người dùng!');
+                            }
+                        } else {
+                            // Gọi API bỏ chặn
+                            if (!confirm('Bạn có chắc muốn bỏ chặn người này?')) return;
+                            try {
+                                const res = await fetch(`${API_CONFIG.BASE_URL}/friendships/unblock?senderId=${currentUser.id}&receiverId=${targetUserId}`, {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                                    }
+                                });
+                                const data2 = await res.json();
+                                if (data2.status && data2.status.success) {
+                                    isBlocked = false;
+                                    updateBlockBtnUI(blockBtn, false);
+                                    alert('Đã bỏ chặn thành công!');
+                                } else {
+                                    alert(data2.status?.displayMessage || 'Bỏ chặn thất bại!');
+                                }
+                            } catch (err) {
+                                alert('Lỗi khi bỏ chặn người dùng!');
+                            }
+                        }
+                    };
+                });
         }
         // Sau khi render xong, nếu là profile của chính mình, gán sự kiện đổi avatar:
         if (isCurrentUser) {
@@ -496,7 +552,7 @@ function addGroupMember() {
     };
 }
 
-async function loadGroupMembers(groupId) {
+async function loadGroupMembers(groupId, isCreator = false) {
     const token = localStorage.getItem('token');
     const section = document.getElementById('group-members-section');
     const list = document.getElementById('group-member-list');
@@ -518,7 +574,42 @@ async function loadGroupMembers(groupId) {
             if (data.data.length === 0) {
                 list.innerHTML = '<li>Chưa có thành viên nào.</li>';
             } else {
-                list.innerHTML = data.data.map(u => `<li style='display:flex;align-items:center;gap:10px;margin-bottom:8px;'><img src="${getAvatarUrl(u.avatarUrl)}" class="avatar-sm" style="width:36px;height:36px;border-radius:50%;object-fit:cover;box-shadow:0 1px 4px #b6c6e3;" /> <span class='member-displayname' style="font-size:16px;font-weight:500;">${u.displayName || u.name || 'Không rõ tên'}</span></li>`).join('');
+                const currentUser = JSON.parse(localStorage.getItem('user'));
+                list.innerHTML = data.data.map(u => {
+                    let removeBtn = '';
+                    if (isCreator && u.id !== currentUser.id) {
+                        removeBtn = `<button class="remove-member-btn" data-user-id="${u.id}" style="margin-left:8px;padding:2px 8px;background:#dc2626;color:#fff;border:none;border-radius:4px;cursor:pointer;">Xóa</button>`;
+                    }
+                    return `<li style='display:flex;align-items:center;gap:10px;margin-bottom:8px;'><img src="${getAvatarUrl(u.avatarUrl)}" class="avatar-sm" style="width:36px;height:36px;border-radius:50%;object-fit:cover;box-shadow:0 1px 4px #b6c6e3;" /> <span class='member-displayname' style="font-size:16px;font-weight:500;">${u.displayName || u.name || 'Không rõ tên'}</span>${removeBtn}</li>`;
+                }).join('');
+                // Gán sự kiện xóa
+                if (isCreator) {
+                    list.querySelectorAll('.remove-member-btn').forEach(btn => {
+                        btn.onclick = async function() {
+                            const userId = btn.getAttribute('data-user-id');
+                            if (!confirm('Bạn có chắc muốn xóa thành viên này khỏi nhóm?')) return;
+                            try {
+                                const removeRes = await fetch(`${API_CONFIG.BASE_URL}/conversation-members/remove`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': 'Bearer ' + token
+                                    },
+                                    body: JSON.stringify({ conversationId: groupId, userId })
+                                });
+                                const removeData = await removeRes.json();
+                                if (removeData.status && removeData.status.success) {
+                                    alert('Đã xóa thành viên thành công!');
+                                    loadGroupMembers(groupId, isCreator); // reload lại danh sách
+                                } else {
+                                    alert(removeData.status?.displayMessage || 'Xóa thành viên thất bại!');
+                                }
+                            } catch (err) {
+                                alert('Lỗi khi xóa thành viên!');
+                            }
+                        };
+                    });
+                }
             }
         } else {
             countSpan.textContent = '0';
@@ -536,13 +627,33 @@ async function loadConversationAttachments(conversationId) {
     section.innerHTML = '<div style="color:#888;padding:10px;">Đang tải file...</div>';
     try {
         const token = localStorage.getItem('token');
+        // Gọi API lấy file đính kèm theo conversation
         const res = await fetch(`${API_CONFIG.BASE_URL}/conversation/${conversationId}`, {
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token }
         });
         const data = await res.json();
+        let attachments = [];
         if (data.status && data.status.success && Array.isArray(data.data) && data.data.length > 0) {
-            section.innerHTML = data.data.map(att => {
+            attachments = data.data;
+        } else {
+            // Nếu không có file, thử lấy từ các message của conversation
+            const msgRes = await fetch(`${API_CONFIG.BASE_URL}/messages/get-by-conversation?conversationId=${conversationId}&page=0&size=100`, {
+                method: 'GET',
+                headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
+            });
+            const msgData = await msgRes.json();
+            if (msgData.status && msgData.status.success && Array.isArray(msgData.data)) {
+                // Lấy tất cả file đính kèm từ các message
+                msgData.data.forEach(msg => {
+                    if (msg.attachments && Array.isArray(msg.attachments)) {
+                        attachments.push(...msg.attachments);
+                    }
+                });
+            }
+        }
+        if (attachments.length > 0) {
+            section.innerHTML = attachments.map(att => {
                 if (att.type && att.type.startsWith('image')) {
                     return `<img src="${att.url}" style="width:100px;height:100px;object-fit:cover;border-radius:8px;margin:4px;box-shadow:0 1px 4px #b6c6e3;" />`;
                 } else if (att.type && att.type.startsWith('video')) {
