@@ -11,17 +11,11 @@ const ProfileService = {
 
     // 3. Đổi mật khẩu
     changePassword: async (currentPassword, newPassword) => {
-        const userId = localStorage.getItem('userId');
-        
-        if (!userId) {
-            throw new Error('Chưa đăng nhập');
-        }
-
-        return await fetchAPI(`/users/change-password/${userId}`, {
+        return await fetchAPI(`/users/change-password`, {
             method: "PUT",
             body: JSON.stringify({
-                currentPassword,
-                newPassword
+                currentPassword: currentPassword,
+                newPassword: newPassword
             }),
         });
     },
