@@ -1421,7 +1421,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
 }
 
-    const currentUserId = localStorage.getItem("userId"); // Hoặc lấy từ session
+    const currentUserId = localStorage.getItem("userId");
     const token = localStorage.getItem("token");
 
     try {
@@ -1430,7 +1430,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (response.status?.code === '00') {
     alert(`Đã tạo nhóm "${groupName}" thành công!`);
     this.reset();
-    // TODO: Cập nhật UI, ví dụ chuyển sang tab nhóm
 } else {
     alert('Tạo nhóm thất bại: ' + (response.status?.displayMessage || 'Lỗi không xác định'));
 }
