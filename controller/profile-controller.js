@@ -949,50 +949,52 @@ const ProfileController = {
     },
 
     // Xử lý đổi mật khẩu
-    handleChangePassword: async function() {
-        const form = document.querySelector('#security-change-password form');
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const originalText = submitBtn.textContent;
+        handleChangePassword: async function() {
+            const form = document.querySelector('#security-change-password form');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
 
-        try {
-            const currentPassword = document.getElementById('current-password').value;
-            const newPassword = document.getElementById('new-password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
+            try {
+                const currentPassword = document.getElementById('current-password').value;
+                const newPassword = document.getElementById('new-password').value;
+                const confirmPassword = document.getElementById('confirm-password').value;
 
-            if (!currentPassword || !newPassword || !confirmPassword) {
-                this.showErrorMessage('Vui lòng điền đầy đủ thông tin!');
-                return;
+                if (!currentPassword || !newPassword || !confirmPassword) {
+                    this.showErrorMessage('Vui lòng điền đầy đủ thông tin!');
+                    return;
+                }
+
+                if (newPassword !== confirmPassword) {
+                    this.showErrorMessage('Mật khẩu mới không khớp!');
+                    return;
+                }
+
+                if (newPassword.length < 6) {
+                    this.showErrorMessage('Mật khẩu mới phải có ít nhất 6 ký tự!');
+                    return;
+                }
+
+                submitBtn.textContent = 'Đang đổi mật khẩu...';
+                submitBtn.disabled = true;
+
+                // Gọi API đổi mật khẩu
+                const response = await ProfileService.changePassword(currentPassword, newPassword);
+
+                if (response.status?.code === '00') {
+                    this.showSuccessMessage('Đổi mật khẩu thành công!');
+                    // Reset form
+                    form.reset();
+                } else {
+                    this.showErrorMessage('Lỗi khi đổi mật khẩu: ' + (response.status?.displayMessage || 'Không xác định'));
+                }
+
+            } catch (error) {
+                console.error('Lỗi đổi mật khẩu:', error);
+                this.showErrorMessage('Lỗi khi đổi mật khẩu: ' + error.message);
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
             }
-
-            if (newPassword !== confirmPassword) {
-                this.showErrorMessage('Mật khẩu mới không khớp!');
-                return;
-            }
-
-            if (newPassword.length < 6) {
-                this.showErrorMessage('Mật khẩu mới phải có ít nhất 6 ký tự!');
-                return;
-            }
-
-            submitBtn.textContent = 'Đang đổi mật khẩu...';
-            submitBtn.disabled = true;
-
-            const response = await ProfileService.changePassword(currentPassword, newPassword);
-            if (response.status?.code === '00') {
-                this.showSuccessMessage('Đổi mật khẩu thành công!');
-                // Reset form
-                document.getElementById('current-password').value = '';
-                document.getElementById('new-password').value = '';
-                document.getElementById('confirm-password').value = '';
-            } else {
-                this.showErrorMessage('Lỗi khi đổi mật khẩu: ' + response.status?.displayMessage);
-            }
-        } catch (error) {
-            this.showErrorMessage('Lỗi khi đổi mật khẩu: ' + error.message);
-        } finally {
-            submitBtn.textContent = originalText;
-            submitBtn.disabled = false;
-        }
     },
 
     // Lọc bạn bè theo tên
