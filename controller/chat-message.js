@@ -212,12 +212,12 @@ function renderMessage(msg, userId) {
 
     const contextMenuHtml = `
         <div class="message-context-menu">
-            <ul>
-                <li onclick="replyMessage('${msg.content}')"><i class="bi bi-reply-fill"></i> Trả lời</li>
-                <li onclick="forwardMessage('${msg.id}')"><i class="bi bi-arrow-right-circle-fill"></i> Chuyển tiếp</li>
-                <li  onclick="forwardMessage('${msg.id}')"><i class="bi bi-pencil-fill"></i> Sửa tin nhắn</li>
-                ${isUser ? `<li onclick=dellMessageById(${msg.id})><i class="bi bi-trash-fill"></i> Thu hồi</li>` : ""}
-            </ul>
+           <ul>
+             <li onclick="replyMessage('${msg.content}')"><i class="bi bi-reply-fill"></i> Trả lời
+             </li><li onclick="forwardMessage('${msg.id}')"><i class="bi bi-arrow-right-circle-fill"></i> Chuyển tiếp</li>
+             ${isUser ? `<li onclick="editMessage('${msg.id}', '${msg.content}')"><i class="bi bi-pencil-fill"></i> Sửa tin nhắn</li>` : ""}
+             ${isUser ? `<li onclick="dellMessageById(${msg.id})"><i class="bi bi-trash-fill"></i> Thu hồi</li>` : ""}
+           </ul>
         </div>
     `;
 
