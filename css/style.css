@@ -2824,3 +2824,58 @@ body {
         color: #e5e7eb;
     }
 }
+
+
+
+
+
+#create-group h2 {
+    font-size: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #333;
+}
+
+#create-group .form-label {
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: block;
+    color: #555;
+}
+
+#create-group .form-control {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+#create-group .form-control:focus {
+    border-color: #105085;
+    outline: none;
+}
+
+#create-group .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #105085;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background-color 0.2s;
+}
+
+#create-group .btn:hover {
+    background-color: #105085;
+}
+

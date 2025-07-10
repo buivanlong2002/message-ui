@@ -17,7 +17,7 @@
     <!-- Sidebar -->
     <aside id="sidebar">
         <div id="sidebar-top">
-<!--            <i class="bi bi-list" id="menu-toggle"></i>-->
+            <!--            <i class="bi bi-list" id="menu-toggle"></i>-->
             <img src="images/logo_TomoTalk.png" id="menu-toggle" style="width: 40px ; height: 30px ;"/>
             <input type="text" id="search-box" placeholder="Tìm kiếm..."/>
         </div>
@@ -29,6 +29,7 @@
                 <li data-section="friends"><i class="bi bi-people-fill"></i> Bạn bè</li>
                 <li data-section="friend-requests"><i class="bi bi-person-plus-fill"></i> Lời mời kết bạn</li>
                 <li data-section="search-user"><i class="bi bi-search"></i> Tìm người dùng</li>
+                <li data-section="create-group"><i class="bi bi-people-fill"></i> Tạo nhóm</li>
                 <li data-section="security"><i class="bi bi-shield-lock-fill"></i> Bảo mật</li>
                 <li data-section="logout"><i class="bi bi-box-arrow-right"></i> Đăng xuất</li>
             </ul>
@@ -69,16 +70,18 @@
 
                 <!-- 1. Profile Section (ĐÃ LÀM ĐẸP LẠI) -->
                 <section id="profile" class="menu-section">
-                        <div class="cover-photo">
-                            <img src="images/banner.jpg" alt="Ảnh bìa" class="cover-img"/>
+                    <div class="cover-photo">
+                        <img src="images/banner.jpg" alt="Ảnh bìa" class="cover-img"/>
+                    </div>
+                    <div class="profile-info">
+                        <img id="avatar" class="avatar"/>
+                        <h2 class="username" id="username"></h2>
+                        <div class="profile-actions">
+                            <button id="edit-profile-btn" class="profile-btn primary"><i
+                                    class="bi bi-pencil-square"></i> Chỉnh sửa trang cá nhân
+                            </button>
                         </div>
-                        <div class="profile-info">
-                            <img id="avatar" class="avatar" />
-                            <h2 class="username" id="username"></h2>
-                            <div class="profile-actions">
-                                <button id="edit-profile-btn" class="profile-btn primary"><i class="bi bi-pencil-square"></i> Chỉnh sửa trang cá nhân</button>
-                            </div>
-                        </div>
+                    </div>
                 </section>
 
                 <!-- 2. Friends Section (ĐÃ TÁCH LỜI MỜI) -->
@@ -94,21 +97,44 @@
                 <!-- 3. Friend Requests Section (MỤC MỚI) -->
                 <section id="friend-requests" class="menu-section" style="display: none;">
                     <h2>Lời mời kết bạn</h2>
-                    <input type="text" id="friend-request-search" placeholder="Tìm kiếm lời mời..." class="friend-search-box"/>
+                    <input type="text" id="friend-request-search" placeholder="Tìm kiếm lời mời..."
+                           class="friend-search-box"/>
                     <div class="friend-requests-list">
                         <!-- Lời mời kết bạn sẽ được render động từ backend -->
                         <div class="loading">Đang tải lời mời kết bạn...</div>
                     </div>
                 </section>
+                <section id="create-group" class="menu-section" style="display: none; padding: 20px;">
+                    <h2><i class="bi bi-people-fill"></i> Tạo nhóm mới</h2>
+
+                    <form id="createGroupForm">
+                        <!-- Tên nhóm -->
+                        <div class="mb-3">
+                            <label for="groupName" class="form-label">Tên nhóm</label>
+                            <input type="text" class="form-control" id="groupName" placeholder="Nhập tên nhóm" required>
+                        </div>
+                        <!-- Nút tạo nhóm -->
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Tạo nhóm
+                        </button>
+                    </form>
+                </section>
+
 
                 <!-- 4. Security Section (ĐÃ HOÀN THIỆN) -->
                 <section id="security" class="menu-section" style="display: none;">
                     <h2>Bảo mật & Quyền riêng tư</h2>
                     <!-- Navigation Tabs -->
                     <div class="security-nav">
-                        <button class="security-nav-item active" data-target="security-edit-info"><i class="bi bi-pencil-square"></i> Thông tin</button>
-                        <button class="security-nav-item" data-target="security-change-password"><i class="bi bi-key-fill"></i> Mật khẩu</button>
-                        <button class="security-nav-item" data-target="security-blocked-users"><i class="bi bi-slash-circle-fill"></i> Quản lý chặn</button>
+                        <button class="security-nav-item active" data-target="security-edit-info"><i
+                                class="bi bi-pencil-square"></i> Thông tin
+                        </button>
+                        <button class="security-nav-item" data-target="security-change-password"><i
+                                class="bi bi-key-fill"></i> Mật khẩu
+                        </button>
+                        <button class="security-nav-item" data-target="security-blocked-users"><i
+                                class="bi bi-slash-circle-fill"></i> Quản lý chặn
+                        </button>
                     </div>
 
                     <!-- Tab Content -->
@@ -122,12 +148,14 @@
                                     <input type="text" id="edit-username" placeholder="Nhập tên hiển thị của bạn">
                                 </div>
                                 <div class="form-group">
-                                    <label for="edit-avatar">Ảnh đại diện (đường dẫn tương đối)</label>
-                                    <input type="text" id="edit-avatar" placeholder="Ví dụ: /uploads/avatar.jpg hoặc để trống">
+                                    <label for="edit-avatar">Ảnh đại diện </label>
+                                    <input type="text" id="edit-avatar"
+                                           placeholder="Ví dụ: /uploads/avatar.jpg hoặc để trống">
                                 </div>
                                 <div class="form-group">
                                     <label for="edit-cover">Ảnh bìa (đường dẫn tương đối)</label>
-                                    <input type="text" id="edit-cover" placeholder="Ví dụ: /uploads/cover.jpg hoặc để trống">
+                                    <input type="text" id="edit-cover"
+                                           placeholder="Ví dụ: /uploads/cover.jpg hoặc để trống">
                                 </div>
                                 <div class="form-group">
                                     <label for="edit-bio">Tiểu sử</label>
@@ -148,12 +176,14 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="new-password">Mật khẩu mới</label>
-                                    <input type="password" id="new-password" placeholder="••••••••" minlength="6" required>
+                                    <input type="password" id="new-password" placeholder="••••••••" minlength="6"
+                                           required>
                                     <small class="form-help">Mật khẩu phải có ít nhất 6 ký tự</small>
                                 </div>
                                 <div class="form-group">
                                     <label for="confirm-password">Xác nhận mật khẩu mới</label>
-                                    <input type="password" id="confirm-password" placeholder="••••••••" minlength="6" required>
+                                    <input type="password" id="confirm-password" placeholder="••••••••" minlength="6"
+                                           required>
                                 </div>
                                 <div class="form-actions">
                                     <button type="submit" class="profile-btn primary">Cập nhật mật khẩu</button>
@@ -233,7 +263,7 @@
                 });
 
                 const targetSection = document.getElementById(sectionId);
-                if(targetSection) {
+                if (targetSection) {
                     targetSection.style.display = 'block';
                 }
 
@@ -252,14 +282,14 @@
         });
 
         // Đóng overlay khi click ra ngoài menu-content
-        menuOverlay.addEventListener('click', function(e) {
+        menuOverlay.addEventListener('click', function (e) {
             if (e.target === menuOverlay) {
                 menuOverlay.style.display = 'none';
             }
         });
 
         // Đóng sidebar menu khi click ra ngoài
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             const sidebarMenu = document.getElementById('sidebar-menu');
             const menuToggle = document.getElementById('menu-toggle');
             if (sidebarMenu.style.display === 'block' && !sidebarMenu.contains(e.target) && e.target !== menuToggle) {
@@ -274,7 +304,7 @@
 
             // Kích hoạt tab đầu tiên (Chỉnh sửa thông tin) bằng cách giả lập một click
             const editInfoTab = document.querySelector('.security-nav-item[data-target="security-edit-info"]');
-            if(editInfoTab) {
+            if (editInfoTab) {
                 editInfoTab.click();
             }
 
@@ -313,7 +343,7 @@
 
         // Handle friend action buttons (ví dụ)
         document.querySelectorAll('.friend-btn').forEach(button => {
-            button.addEventListener('click', function(e) {
+            button.addEventListener('click', function (e) {
                 e.stopPropagation(); // Ngăn sự kiện nổi bọt
                 const action = this.getAttribute('data-action');
                 const friendItem = this.closest('.friend-item');
@@ -321,7 +351,6 @@
                 alert(`Thực hiện hành động '${action}' với ${friendName}.`);
             });
         });
-
 
 
     });

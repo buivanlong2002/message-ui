@@ -1406,4 +1406,37 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-}); 
+});
+
+
+
+/// tạo nhóm
+
+    document.getElementById('createGroupForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const groupName = document.getElementById('groupName').value.trim();
+    if (!groupName) {
+    alert('Vui lòng nhập tên nhóm.');
+    return;
+}
+
+    const currentUserId = localStorage.getItem("userId"); // Hoặc lấy từ session
+    const token = localStorage.getItem("token");
+
+    try {
+    const response = await ConversationService.createGroupConversation(groupName, currentUserId, token);
+
+    if (response.status?.code === '00') {
+    alert(`Đã tạo nhóm "${groupName}" thành công!`);
+    this.reset();
+    // TODO: Cập nhật UI, ví dụ chuyển sang tab nhóm
+} else {
+    alert('Tạo nhóm thất bại: ' + (response.status?.displayMessage || 'Lỗi không xác định'));
+}
+} catch (error) {
+    console.error('Lỗi tạo nhóm:', error);
+    alert('Có lỗi xảy ra khi tạo nhóm.');
+}
+});
+
