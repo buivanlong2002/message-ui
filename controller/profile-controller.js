@@ -894,9 +894,9 @@ const ProfileController = {
     // Điền dữ liệu vào form chỉnh sửa
     populateEditForm: function(userData) {
         const editAvatar = document.getElementById('edit-avatar');
-        const editCover = document.getElementById('edit-cover');
         const editUsername = document.getElementById('edit-username');
-        const editBio = document.getElementById('edit-bio');
+        const editPhone = document.getElementById('edit-phone');
+        const editEmail = document.getElementById('edit-email');
 
         // Xử lý avatar URL để chỉ lưu đường dẫn tương đối
         let avatarUrl = userData.avatarUrl || '';
@@ -906,18 +906,10 @@ const ProfileController = {
             avatarUrl = avatarUrl.replace('http://localhost:8885', '');
         }
 
-        // Xử lý cover URL để chỉ lưu đường dẫn tương đối
-        let coverUrl = userData.coverUrl || '';
-        if (coverUrl && coverUrl.startsWith('http://localhost:8885/')) {
-            coverUrl = coverUrl.replace('http://localhost:8885/', '');
-        } else if (coverUrl && coverUrl.startsWith('http://localhost:8885')) {
-            coverUrl = coverUrl.replace('http://localhost:8885', '');
-        }
-
         if (editAvatar) editAvatar.value = avatarUrl;
-        if (editCover) editCover.value = coverUrl;
         if (editUsername) editUsername.value = userData.displayName || '';
-        if (editBio) editBio.value = userData.bio || '';
+        if (editPhone) editPhone.value = userData.phoneNumber || '';
+        if (editEmail) editEmail.value = userData.email || '';
     },
 
     // Xử lý cập nhật profile
@@ -933,8 +925,8 @@ const ProfileController = {
             const formData = {
                 displayName: document.getElementById('edit-username').value,
                 avatarUrl: document.getElementById('edit-avatar').value,
-                coverUrl: document.getElementById('edit-cover').value,
-                bio: document.getElementById('edit-bio').value
+                phoneNumber: document.getElementById('edit-phone').value,
+                email: document.getElementById('edit-email').value
             };
 
             console.log('Gửi dữ liệu cập nhật:', formData);
