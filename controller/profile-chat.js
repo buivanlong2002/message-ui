@@ -1,5 +1,3 @@
-
-
 function goToProfile(name ,isGroup, avatarUrl, groupId, isCreator) {
     isGroup = (isGroup === true || isGroup === 'true');
 
@@ -75,18 +73,12 @@ function goToProfile(name ,isGroup, avatarUrl, groupId, isCreator) {
                     });
                     const data = await res.json();
                     if (data.status && data.status.success) {
-                        // Cập nhật lại avatar trên UI, tránh cache
                         const img = document.getElementById('group-avatar-img');
                         img.src = getAvatarUrl(data.data) + '?t=' + Date.now();
-                        // Cập nhật avatarUrl trong allConversations và sidebar
                         if (typeof allConversations !== 'undefined') {
                             const conv = allConversations.find(c => c.id === groupId);
-                            if (conv) {
-                                conv.avatarUrl = data.data;
-                            }
-                            if (typeof displayConversations === 'function') {
-                                displayConversations(allConversations);
-                            }
+                            if (conv) conv.avatarUrl = data.data;
+                            if (typeof displayConversations === 'function') displayConversations(allConversations);
                         }
                         alert('Đổi ảnh nhóm thành công!');
                     } else {
@@ -96,28 +88,22 @@ function goToProfile(name ,isGroup, avatarUrl, groupId, isCreator) {
                     alert('Lỗi khi upload ảnh nhóm!');
                 }
             };
-            // Thêm xử lý cho nút đổi tên nhóm
             const renameBtn = document.getElementById('rename-group-btn');
-            if (renameBtn) {
-                renameBtn.onclick = function() {
-                    alert('Chức năng đang phát triển!');
-                };
-            }
-            // Thêm xử lý cho nút xóa thành viên
+            if (renameBtn) renameBtn.onclick = () => alert('Chức năng đang phát triển!');
             const removeBtn = document.getElementById('remove-member-btn');
-            if (removeBtn) {
-                removeBtn.onclick = function() {
-                    alert('Chức năng xóa thành viên đang phát triển!');
-                };
-            }
+            if (removeBtn) removeBtn.onclick = () => alert('Chức năng xóa thành viên đang phát triển!');
         }
-        // Sau khi render xong profile nhóm, gọi hàm loadGroupMembers(groupId)
+
         loadGroupMembers(groupId, isCreator);
-        // Gọi luôn hàm loadConversationAttachments cho nhóm
-        loadConversationAttachments(groupId);
+
+        // === SỬA LỖI TẠI ĐÂY (CHO NHÓM) ===
+        // 1. Tìm phần tử chứa ảnh/video sau khi đã render HTML
+        const mediaGrid = profileDetails.querySelector('.media-grid');
+        // 2. Gọi hàm tải ảnh/video với đầy đủ 2 tham số
+        loadConversationAttachments(groupId, mediaGrid);
+
     } else {
         // === Giao diện cá nhân (1-1) ===
-        // Xác định isCurrentUser: so sánh id/email user hiện tại với user đang xem profile
         let isCurrentUser = false;
         try {
             const currentUser = JSON.parse(localStorage.getItem('user'));
@@ -125,16 +111,15 @@ function goToProfile(name ,isGroup, avatarUrl, groupId, isCreator) {
                 isCurrentUser = true;
             }
         } catch (e) {}
-        // profileTitle.innerText = "";
+
         const userAvatar = avatarUrl ? getAvatarUrl(avatarUrl) : 'images/default_avatar.jpg';
         profileDetails.innerHTML = `
             <div class="profile-avatar-center">
                <img id="user-avatar-img" src="${userAvatar}" class="avatar-lg" style="width:88px;height:88px;border-radius:50%;object-fit:cover;box-shadow:0 1px 8px #b6c6e3;" onerror="this.src='images/default_avatar.jpg'" />
-               ${isCurrentUser ? `<button id='change-user-avatar-btn' style='margin-top:8px;'><i class='bi bi-camera'></i> Đổi ảnh đại diện</button>` : ''}
+               ${isCurrentUser ? `<input type="file" id="user-avatar-file" accept="image/*" style="display:none;" /><button id='change-user-avatar-btn' style='margin-top:8px;'><i class='bi bi-camera'></i> Đổi ảnh đại diện</button>` : ''}
                 <h4 class="group-name">${name}</h4>
                 <div class="group-actions">
                     <button onclick="searchMessages()"><i class="bi bi-search"></i><br>Tìm tin nhắn</button>
-                    ${isCurrentUser ? `<button id='change-user-avatar-btn'><i class='bi bi-camera'></i><br>Đổi ảnh đại diện</button>` : ''}
                     <button onclick="viewProfileDetails()"><i class="bi bi-person-lines-fill"></i><br>Trang cá nhân</button>
                 </div>
             </div>
@@ -161,72 +146,22 @@ function goToProfile(name ,isGroup, avatarUrl, groupId, isCreator) {
                 </div>
             </div>
         `;
-        // Sau khi render xong profileDetails cho 1-1, gọi hàm loadConversationAttachments(chatId)
-        loadConversationAttachments(window.currentChatId);
-        // Sau khi render xong, luôn gán sự kiện cho nút chặn nếu tồn tại:
+
+        // === SỬA LỖI TẠI ĐÂY (CHO CHAT 1-1) ===
+        // 1. Tìm phần tử chứa ảnh/video sau khi đã render HTML
+        const mediaGrid = profileDetails.querySelector('.media-grid');
+        // 2. Gọi hàm tải ảnh/video với đầy đủ 2 tham số
+        loadConversationAttachments(window.currentChatId, mediaGrid);
+
+        // Gán sự kiện cho các nút chức năng
         const blockBtn = document.getElementById('block-user-btn');
         if (blockBtn) {
-            // Kiểm tra trạng thái chặn hiện tại
             const currentUser = JSON.parse(localStorage.getItem('user'));
             const targetUserId = groupId;
-            fetch(`${API_CONFIG.BASE_URL}/blocked-users?userId=${currentUser.id}`)
-                .then(res => res.json())
-                .then(data => {
-                    let isBlocked = false;
-                    if (data.status && data.status.success && Array.isArray(data.data)) {
-                        isBlocked = data.data.some(u => u.blockedUserId === targetUserId);
-                    }
-                    updateBlockBtnUI(blockBtn, isBlocked);
-                    blockBtn.onclick = async function() {
-                        if (!isBlocked) {
-                            // Gọi API chặn
-                            if (!confirm('Bạn có chắc muốn chặn người này?')) return;
-                            try {
-                                const res = await fetch(`${API_CONFIG.BASE_URL}/friendships/block`, {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'Authorization': 'Bearer ' + localStorage.getItem('token')
-                                    },
-                                    body: JSON.stringify({ userId: currentUser.id, blockedUserId: targetUserId })
-                                });
-                                const data2 = await res.json();
-                                if (data2.status && data2.status.success) {
-                                    isBlocked = true;
-                                    updateBlockBtnUI(blockBtn, true);
-                                    alert('Đã chặn thành công!');
-                                } else {
-                                    alert(data2.status?.displayMessage || 'Chặn thất bại!');
-                                }
-                            } catch (err) {
-                                alert('Lỗi khi chặn người dùng!');
-                            }
-                        } else {
-                            // Gọi API bỏ chặn
-                            if (!confirm('Bạn có chắc muốn bỏ chặn người này?')) return;
-                            try {
-                                const res = await fetch(`${API_CONFIG.BASE_URL}/friendships/unblock?senderId=${currentUser.id}&receiverId=${targetUserId}`, {
-                                    method: 'DELETE',
-                                    headers: {
-                                        'Authorization': 'Bearer ' + localStorage.getItem('token')
-                                    }
-                                });
-                                const data2 = await res.json();
-                                if (data2.status && data2.status.success) {
-                                    isBlocked = false;
-                                    updateBlockBtnUI(blockBtn, false);
-                                    alert('Đã bỏ chặn thành công!');
-                                } else {
-                                    alert(data2.status?.displayMessage || 'Bỏ chặn thất bại!');
-                                }
-                            } catch (err) {
-                                alert('Lỗi khi bỏ chặn người dùng!');
-                            }
-                        }
-                    };
-                });
+            // Sử dụng hàm đã có để kiểm tra và gán sự kiện chặn/bỏ chặn
+            checkBlockedStatusAndBind(blockBtn, targetUserId);
         }
-        // Sau khi render xong, nếu là profile của chính mình, gán sự kiện đổi avatar:
+
         if (isCurrentUser) {
             const btn = document.getElementById('change-user-avatar-btn');
             const fileInput = document.getElementById('user-avatar-file');
@@ -244,7 +179,6 @@ function goToProfile(name ,isGroup, avatarUrl, groupId, isCreator) {
                     });
                     const data = await res.json();
                     if (data.status && data.status.success) {
-                        // Cập nhật lại avatar trên UI, tránh cache
                         const img = document.getElementById('user-avatar-img');
                         img.src = getAvatarUrl(data.data) + '?t=' + Date.now();
                         alert('Đổi ảnh đại diện thành công!');
@@ -265,8 +199,6 @@ function goToProfile(name ,isGroup, avatarUrl, groupId, isCreator) {
         chat.classList.add('split');
     }
 }
-
-
 
 function leaveGroup() {
     // Placeholder: Xử lý logic rời nhóm
@@ -545,6 +477,7 @@ async function loadGroupMembers(groupId, isCreator = false) {
     const countSpan = document.getElementById('group-member-count');
     if (!section || !list || !countSpan) return;
     list.innerHTML = '<li>Đang tải...</li>';
+
     try {
         const res = await fetch(`${API_CONFIG.BASE_URL}/conversation-members/members-by-conversation`, {
             method: 'POST',
@@ -554,26 +487,47 @@ async function loadGroupMembers(groupId, isCreator = false) {
             },
             body: JSON.stringify({ conversationId: groupId })
         });
+
         const data = await res.json();
+
         if (data.status && data.status.success && Array.isArray(data.data)) {
             countSpan.textContent = data.data.length;
             if (data.data.length === 0) {
                 list.innerHTML = '<li>Chưa có thành viên nào.</li>';
             } else {
-                const currentUser = JSON.parse(localStorage.getItem('user'));
+                // An toàn khi parse user từ localStorage
+                let currentUser = {};
+                try {
+                    currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+                } catch (e) {
+                    console.warn("Không parse được user từ localStorage:", e);
+                }
+
                 list.innerHTML = data.data.map(u => {
                     let removeBtn = '';
-                    if (isCreator && u.id !== currentUser.id) {
+                    if (isCreator && currentUser?.id && u.id !== currentUser.id) {
                         removeBtn = `<button class="remove-member-btn" data-user-id="${u.id}" style="margin-left:8px;padding:2px 8px;background:#dc2626;color:#fff;border:none;border-radius:4px;cursor:pointer;">Xóa</button>`;
                     }
-                    return `<li style='display:flex;align-items:center;gap:10px;margin-bottom:8px;'><img src="${getAvatarUrl(u.avatarUrl)}" class="avatar-sm" style="width:36px;height:36px;border-radius:50%;object-fit:cover;box-shadow:0 1px 4px #b6c6e3;" /> <span class='member-displayname' style="font-size:16px;font-weight:500;">${u.displayName || u.name || 'Không rõ tên'}</span>${removeBtn}</li>`;
+
+                    return `
+                        <li style='display:flex;align-items:center;gap:10px;margin-bottom:8px;'>
+                            <img src="${getAvatarUrl(u.avatarUrl)}" class="avatar-sm"
+                                 style="width:36px;height:36px;border-radius:50%;object-fit:cover;box-shadow:0 1px 4px #b6c6e3;" />
+                            <span class='member-displayname' style="font-size:16px;font-weight:500;">
+                                ${u.displayName || u.name || 'Không rõ tên'}
+                            </span>
+                            ${removeBtn}
+                        </li>
+                    `;
                 }).join('');
-                // Gán sự kiện xóa
+
+                // Gán sự kiện xóa nếu là người tạo
                 if (isCreator) {
                     list.querySelectorAll('.remove-member-btn').forEach(btn => {
-                        btn.onclick = async function() {
+                        btn.onclick = async function () {
                             const userId = btn.getAttribute('data-user-id');
                             if (!confirm('Bạn có chắc muốn xóa thành viên này khỏi nhóm?')) return;
+
                             try {
                                 const removeRes = await fetch(`${API_CONFIG.BASE_URL}/conversation-members/remove`, {
                                     method: 'POST',
@@ -583,10 +537,11 @@ async function loadGroupMembers(groupId, isCreator = false) {
                                     },
                                     body: JSON.stringify({ conversationId: groupId, userId })
                                 });
+
                                 const removeData = await removeRes.json();
                                 if (removeData.status && removeData.status.success) {
                                     alert('Đã xóa thành viên thành công!');
-                                    loadGroupMembers(groupId, isCreator); // reload lại danh sách
+                                    loadGroupMembers(groupId, isCreator); // Reload lại danh sách
                                 } else {
                                     alert(removeData.status?.displayMessage || 'Xóa thành viên thất bại!');
                                 }
@@ -602,10 +557,12 @@ async function loadGroupMembers(groupId, isCreator = false) {
             list.innerHTML = '<li>Không lấy được danh sách thành viên.</li>';
         }
     } catch (err) {
+        console.error("Lỗi khi tải thành viên:", err);
         countSpan.textContent = '?';
         list.innerHTML = '<li>Lỗi khi tải thành viên nhóm.</li>';
     }
 }
+
 
 async function loadConversationAttachments(conversationId, section) {
     if (!section) return;
