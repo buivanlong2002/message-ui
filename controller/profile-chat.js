@@ -46,14 +46,7 @@ function goToProfile(name ,isGroup, avatarUrl, groupId, isCreator) {
 
             <div class="profile-section">
                 <div class="section-header">Ảnh/Video</div>
-                <div class="media-grid">
-                    <img src="https://via.placeholder.com/100" />
-                    <img src="https://via.placeholder.com/100" />
-                    <img src="https://via.placeholder.com/100" />
-                    <img src="https://via.placeholder.com/100" />
-                    <img src="https://via.placeholder.com/100" />
-                    <img src="https://via.placeholder.com/100" />
-                </div>
+                <div class="media-grid"></div>
                 <button class="view-all">Xem tất cả</button>
             </div>
 
@@ -157,14 +150,7 @@ function goToProfile(name ,isGroup, avatarUrl, groupId, isCreator) {
 
             <div class="profile-section">
                 <div class="section-header">Ảnh/Video</div>
-                <div class="media-grid">
-                    <img src="https://via.placeholder.com/100" />
-                    <img src="https://via.placeholder.com/100" />
-                    <img src="https://via.placeholder.com/100" />
-                    <img src="https://via.placeholder.com/100" />
-                    <img src="https://via.placeholder.com/100" />
-                    <img src="https://via.placeholder.com/100" />
-                </div>
+                <div class="media-grid"></div>
                 <button class="view-all">Xem tất cả</button>
             </div>
             <div class="profile-section">
@@ -621,30 +607,33 @@ async function loadGroupMembers(groupId, isCreator = false) {
     }
 }
 
-async function loadConversationAttachments(conversationId) {
-    const section = document.querySelector('.profile-section .media-grid');
+async function loadConversationAttachments(conversationId, section) {
     if (!section) return;
     section.innerHTML = '<div style="color:#888;padding:10px;">Đang tải file...</div>';
     try {
         const token = localStorage.getItem('token');
-        // Gọi API lấy file đính kèm theo conversation
+
+        // 1. Gọi API chính
         const res = await fetch(`${API_CONFIG.BASE_URL}/conversation/${conversationId}`, {
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token }
         });
         const data = await res.json();
         let attachments = [];
-        if (data.status && data.status.success && Array.isArray(data.data) && data.data.length > 0) {
+
+        if (data.status?.success && Array.isArray(data.data) && data.data.length > 0) {
             attachments = data.data;
         } else {
-            // Nếu không có file, thử lấy từ các message của conversation
+            // 2. Lấy từ message nếu không có
             const msgRes = await fetch(`${API_CONFIG.BASE_URL}/messages/get-by-conversation?conversationId=${conversationId}&page=0&size=100`, {
                 method: 'GET',
-                headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                }
             });
             const msgData = await msgRes.json();
-            if (msgData.status && msgData.status.success && Array.isArray(msgData.data)) {
-                // Lấy tất cả file đính kèm từ các message
+            if (msgData.status?.success && Array.isArray(msgData.data)) {
                 msgData.data.forEach(msg => {
                     if (msg.attachments && Array.isArray(msg.attachments)) {
                         attachments.push(...msg.attachments);
@@ -652,23 +641,43 @@ async function loadConversationAttachments(conversationId) {
                 });
             }
         }
+
+        // 3. Hiển thị ảnh/video
         if (attachments.length > 0) {
-            section.innerHTML = attachments.map(att => {
-                if (att.type && att.type.startsWith('image')) {
-                    return `<img src="${att.url}" style="width:100px;height:100px;object-fit:cover;border-radius:8px;margin:4px;box-shadow:0 1px 4px #b6c6e3;" />`;
-                } else if (att.type && att.type.startsWith('video')) {
-                    return `<video src="${att.url}" controls style="width:100px;height:100px;border-radius:8px;margin:4px;box-shadow:0 1px 4px #b6c6e3;"></video>`;
+            section.innerHTML = attachments.slice(0, 4).map(att => {
+                const fileUrl = `https://cms-service.up.railway.app${att.url}`;
+                const type = att.type || '';
+
+                if (type.startsWith('image') || fileUrl.match(/\.(jpg|jpeg|png|gif|bmp)$/i)) {
+                    return `
+                        <img src="${fileUrl}" alt="ảnh" 
+                             style="width:100px;height:100px;object-fit:cover;
+                                    border-radius:8px;margin:4px;box-shadow:0 1px 4px #b6c6e3;" />`;
+                } else if (type.startsWith('video') || fileUrl.match(/\.(mp4|webm|ogg)$/i)) {
+                    return `
+                        <video src="${fileUrl}" controls 
+                               style="width:100px;height:100px;border-radius:8px;
+                                      margin:4px;box-shadow:0 1px 4px #b6c6e3;"></video>`;
                 } else {
-                    return `<a href="${att.url}" target="_blank" style="display:inline-block;width:100px;height:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#f3f4f6;border-radius:8px;margin:4px;padding:8px;box-shadow:0 1px 4px #b6c6e3;vertical-align:top;font-size:13px;">${att.name || 'File đính kèm'}</a>`;
+                    return `
+                        <a href="${fileUrl}" target="_blank"
+                           style="display:inline-block;width:100px;height:100px;
+                                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+                                  background:#f3f4f6;border-radius:8px;margin:4px;padding:8px;
+                                  box-shadow:0 1px 4px #b6c6e3;vertical-align:top;font-size:13px;">
+                            ${att.name || 'File đính kèm'}
+                        </a>`;
                 }
             }).join('');
         } else {
             section.innerHTML = '<div style="color:#888;padding:10px;">Không có file nào.</div>';
         }
     } catch (err) {
+        console.error(err);
         section.innerHTML = '<div style="color:#dc2626;padding:10px;">Lỗi khi tải file!</div>';
     }
 }
+
 
 async function checkBlockedStatusAndBind(btn, userId) {
     try {
