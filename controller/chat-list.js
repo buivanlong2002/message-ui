@@ -47,17 +47,31 @@ function displayConversations(conversations) {
 
         const avatarUrl = getAvatarUrl(chat.avatarUrl);
 
-        // Kiểm tra trạng thái đã xem hay chưa
         const isSeen = lastMessage?.seen === true;
 
-        // Lớp CSS tùy thuộc vào trạng thái đã xem
         const previewClass = isSeen ? "chat-preview seen" : "chat-preview unseen";
         const nameClass = isSeen ? "chat-name" : "chat-name unread";
         const unreadDot = isSeen ? "" : `<span class="unread-dot">•</span>`;
 
         chatItem.onclick = function () {
             loadChat(chat.id, this, name, avatarUrl, chat.isGroup);
+
+            // Gọi API đánh dấu đã xem khi người dùng click vào cuộc trò chuyện
+            const token = localStorage.getItem('token');
+            const userId = localStorage.getItem('userId');
+            if (token && userId) {
+                MessageStatusService.markAllAsSeen(chat.id, userId, token)
+
+
+                    .then(response => {
+                        console.log("Đã đánh dấu tin nhắn là đã xem cho cuộc trò chuyện:", chat.id);
+                    })
+                    .catch(error => {
+                        console.error("Lỗi khi cập nhật trạng thái đã xem:", error);
+                    });
+            }
         };
+
 
         chatItem.innerHTML = `
             <img
