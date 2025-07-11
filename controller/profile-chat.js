@@ -1028,3 +1028,15 @@ async function renderFriendActionButton(container, userData, currentUserId, targ
 function deleteGroup() {
     alert("Đã nhấn Xóa nhóm. Chức năng này cần được triển khai thêm!");
 }
+
+// Hàm ẩn khối chào mừng khi vào cuộc trò chuyện
+function hideWelcomeEmptyChat() {
+    const welcome = document.getElementById('welcome-empty-chat');
+    if (welcome) welcome.style.display = 'none';
+}
+// Hàm hiện lại khối chào mừng khi không có chat nào
+function showWelcomeEmptyChat() {
+    const welcome = document.getElementById('welcome-empty-chat');
+    if (welcome) welcome.style.display = 'flex';
+}
+// Gợi ý: Gọi hideWelcomeEmptyChat() khi user chọn một cuộc trò chuyện, và showWelcomeEmptyChat() khi user thoát hết chat.
