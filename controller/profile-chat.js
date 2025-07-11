@@ -501,18 +501,33 @@ async function displayOtherUserProfile(userData) {
     const currentUserId = localStorage.getItem('userId');
     const targetUserId = userData.id;
     let isFriend = false;
+    let isSentRequest = false;
+    let isReceivedRequest = false;
+    // Lấy trạng thái bạn bè, đã gửi, đã nhận lời mời
     try {
-        const token = localStorage.getItem('token');
-        const friendsRes = await fetch(`${API_CONFIG.BASE_URL}/friendships/friends?userId=${currentUserId}`, {
-            method: 'GET',
-            headers: { 'Authorization': 'Bearer ' + token }
-        });
-        const friendsData = await friendsRes.json();
-        if (friendsData.status && friendsData.status.success && Array.isArray(friendsData.data)) {
-            isFriend = friendsData.data.some(u => u.id === targetUserId);
+        // 1. Kiểm tra bạn bè
+        const friendsRes = await FriendshipService.getFriendships(currentUserId);
+        if (friendsRes.status && friendsRes.status.code === '00' && Array.isArray(friendsRes.data)) {
+            isFriend = friendsRes.data.some(u => String(u.id) === String(targetUserId));
+        }
+        // 2. Kiểm tra đã gửi lời mời
+        const sentRes = await FriendshipService.getSentRequests(currentUserId);
+        if (sentRes.status && sentRes.status.code === '00' && Array.isArray(sentRes.data)) {
+            isSentRequest = sentRes.data.some(r => {
+                const receiverId = r.receiverId || r.receiver?.id;
+                return String(receiverId) === String(targetUserId);
+            });
+        }
+        // 3. Kiểm tra đã nhận lời mời
+        const receivedRes = await FriendshipService.getPendingRequests(currentUserId);
+        if (receivedRes.status && receivedRes.status.code === '00' && Array.isArray(receivedRes.data)) {
+            isReceivedRequest = receivedRes.data.some(r => {
+                const senderId = r.senderId || r.sender?.id;
+                return String(senderId) === String(targetUserId);
+            });
         }
     } catch (err) {
-        console.warn('Không kiểm tra được trạng thái bạn bè:', err);
+        console.warn('Không kiểm tra được trạng thái bạn bè/lời mời:', err);
     }
 
     const overlay = document.createElement('div');
@@ -532,105 +547,31 @@ async function displayOtherUserProfile(userData) {
     `;
 
     const userAvatar = userData.avatarUrl ? getAvatarUrl(userData.avatarUrl) : 'images/default_avatar.jpg';
-    
+    let friendBtnHtml = '';
+    if (isFriend) {
+        friendBtnHtml = `<button id="friend-status-btn" style="background:#e0f2fe;color:#0284c7;border:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:600;cursor:default;display:flex;align-items:center;gap:8px;" disabled><i class="bi bi-people-fill"></i> Bạn bè</button>`;
+    } else if (isSentRequest) {
+        friendBtnHtml = `<button id="cancel-request-btn" style="background:#fef3c7;color:#92400e;border:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;"><i class="bi bi-clock"></i> Hủy lời mời</button>`;
+    } else if (isReceivedRequest) {
+        friendBtnHtml = `<button id="accept-request-btn" style="background:#d1fae5;color:#059669;border:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;"><i class="bi bi-person-check"></i> Chấp nhận</button>`;
+    } else {
+        friendBtnHtml = `<button id="add-friend-btn" style="background:#f3f4f6;color:#105085;border:1.5px solid #d1d5db;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;"><i class="bi bi-person-plus"></i> Kết bạn</button>`;
+    }
+
     overlay.innerHTML = `
-        <div style="
-            background: #fff;
-            border-radius: 20px;
-            padding: 36px 32px 28px 32px;
-            max-width: 410px;
-            width: 100%;
-            box-shadow: 0 8px 32px rgba(16,80,133,0.18), 0 1.5px 8px rgba(16,80,133,0.10);
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        ">
-            <button id="close-profile-btn" style="
-                position: absolute;
-                top: 16px;
-                right: 18px;
-                background: none;
-                border: none;
-                font-size: 26px;
-                color: #888;
-                cursor: pointer;
-                width: 36px;
-                height: 36px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 50%;
-                transition: background 0.2s;
-            " onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">&times;</button>
-            <img src="${userAvatar}" alt="Avatar" 
-                 style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; 
-                        box-shadow: 0 4px 16px rgba(16,80,133,0.15); margin-bottom: 18px; border: 3px solid #e0e7ef; background: #f8fafc;" 
-                 onerror="this.src='images/default_avatar.jpg'" />
-            <h2 style="margin: 0 0 8px 0; color: #105085; font-size: 25px; font-weight: 700; letter-spacing: 0.5px; text-align: center;">
-                ${userData.displayName || userData.name || userData.username || 'Người dùng'}
-            </h2>
-            <div style="margin-bottom: 18px; min-height: 22px; width: 100%; text-align: center;">
-                <span style="color: #6b7280; font-size: 15px; font-style: ${userData.bio ? 'normal' : 'italic'};">
-                    ${userData.bio ? userData.bio : '<span style=\'color:#b6b6b6\'>Chưa có tiểu sử</span>'}
-                </span>
-            </div>
+        <div style="background: #fff; border-radius: 20px; padding: 36px 32px 28px 32px; max-width: 410px; width: 100%; box-shadow: 0 8px 32px rgba(16,80,133,0.18), 0 1.5px 8px rgba(16,80,133,0.10); position: relative; display: flex; flex-direction: column; align-items: center;">
+            <button id="close-profile-btn" style="position: absolute; top: 16px; right: 18px; background: none; border: none; font-size: 26px; color: #888; cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">&times;</button>
+            <img src="${userAvatar}" alt="Avatar" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 16px rgba(16,80,133,0.15); margin-bottom: 18px; border: 3px solid #e0e7ef; background: #f8fafc;" onerror="this.src='images/default_avatar.jpg'" />
+            <h2 style="margin: 0 0 8px 0; color: #105085; font-size: 25px; font-weight: 700; letter-spacing: 0.5px; text-align: center;">${userData.displayName || userData.name || userData.username || 'Người dùng'}</h2>
+            <div style="margin-bottom: 18px; min-height: 22px; width: 100%; text-align: center;"><span style="color: #6b7280; font-size: 15px; font-style: ${userData.bio ? 'normal' : 'italic'};">${userData.bio ? userData.bio : '<span style=\'color:#b6b6b6\'>Chưa có tiểu sử</span>'}</span></div>
             <div style="width: 100%; background: #f8fafc; border-radius: 14px; padding: 18px 18px 10px 18px; margin-bottom: 18px; box-shadow: 0 1px 6px #e5eaf3;">
-                <div style="display: flex; align-items: center; margin-bottom: 13px;">
-                    <i class="bi bi-envelope" style="color: #105085; margin-right: 12px; width: 20px; font-size: 18px;"></i>
-                    <span style="color: #374151; font-weight: 500; min-width: 80px;">Email:</span>
-                    <span style="color: #6b7280; margin-left: 8px;">${userData.email || 'Không có thông tin'}</span>
-                </div>
-                <div style="display: flex; align-items: center; margin-bottom: 13px;">
-                    <i class="bi bi-telephone" style="color: #105085; margin-right: 12px; width: 20px; font-size: 18px;"></i>
-                    <span style="color: #374151; font-weight: 500; min-width: 80px;">Số điện thoại:</span>
-                    <span style="color: #6b7280; margin-left: 8px;">${userData.phoneNumber || 'Không có thông tin'}</span>
-                </div>
-                <div style="display: flex; align-items: center;">
-                    <i class="bi bi-calendar3" style="color: #105085; margin-right: 12px; width: 20px; font-size: 18px;"></i>
-                    <span style="color: #374151; font-weight: 500; min-width: 80px;">Tham gia:</span>
-                    <span style="color: #6b7280; margin-left: 8px;">
-                        ${userData.createdAt ? new Date(userData.createdAt).toLocaleDateString('vi-VN') : 'Không có thông tin'}
-                    </span>
-                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 13px;"><i class="bi bi-envelope" style="color: #105085; margin-right: 12px; width: 20px; font-size: 18px;"></i><span style="color: #374151; font-weight: 500; min-width: 80px;">Email:</span><span style="color: #6b7280; margin-left: 8px;">${userData.email || 'Không có thông tin'}</span></div>
+                <div style="display: flex; align-items: center; margin-bottom: 13px;"><i class="bi bi-telephone" style="color: #105085; margin-right: 12px; width: 20px; font-size: 18px;"></i><span style="color: #374151; font-weight: 500; min-width: 80px;">Số điện thoại:</span><span style="color: #6b7280; margin-left: 8px;">${userData.phoneNumber || 'Không có thông tin'}</span></div>
+                <div style="display: flex; align-items: center;"><i class="bi bi-calendar3" style="color: #105085; margin-right: 12px; width: 20px; font-size: 18px;"></i><span style="color: #374151; font-weight: 500; min-width: 80px;">Tham gia:</span><span style="color: #6b7280; margin-left: 8px;">${userData.createdAt ? new Date(userData.createdAt).toLocaleDateString('vi-VN') : 'Không có thông tin'}</span></div>
             </div>
             <div style="display: flex; gap: 16px; justify-content: center; width: 100%; margin-bottom: 2px;">
-                <button id="message-user-btn" style="
-                    background: linear-gradient(135deg, #105085, #1a7cb3);
-                    color: white;
-                    border: none;
-                    padding: 12px 28px;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    font-size: 15px;
-                    font-weight: 600;
-                    box-shadow: 0 2px 8px rgba(16,80,133,0.07);
-                    transition: all 0.2s;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                ">
-                    <i class="bi bi-chat-dots"></i>
-                    Nhắn tin
-                </button>
-                ${!isFriend ? `<button id="add-friend-btn" style="
-                    background: #f3f4f6;
-                    color: #105085;
-                    border: 1.5px solid #d1d5db;
-                    padding: 12px 28px;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    font-size: 15px;
-                    font-weight: 600;
-                    box-shadow: 0 2px 8px rgba(16,80,133,0.07);
-                    transition: all 0.2s;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                ">
-                    <i class="bi bi-person-plus"></i>
-                    Kết bạn
-                </button>` : ''}
+                <button id="message-user-btn" style="background: linear-gradient(135deg, #105085, #1a7cb3); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 600; box-shadow: 0 2px 8px rgba(16,80,133,0.07); transition: all 0.2s; display: flex; align-items: center; gap: 8px;"><i class="bi bi-chat-dots"></i> Nhắn tin</button>
+                <span id="friend-action-btn-container"></span>
             </div>
         </div>
     `;
@@ -651,7 +592,6 @@ async function displayOtherUserProfile(userData) {
             return;
         }
         if (typeof ProfileController !== 'undefined' && ProfileController.startChatWithUser) {
-            // Chỉ truyền object user đơn giản, không truyền object có members hoặc các trường phức tạp
             const simpleUser = {
                 id: userData.id,
                 displayName: userData.displayName,
@@ -660,37 +600,9 @@ async function displayOtherUserProfile(userData) {
             ProfileController.startChatWithUser(targetUserId, simpleUser);
         }
     };
-    const addFriendBtn = document.getElementById('add-friend-btn');
-    if (addFriendBtn) {
-        addFriendBtn.onclick = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`${API_CONFIG.BASE_URL}/friendships/send-request`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    },
-                    body: JSON.stringify({
-                        senderId: currentUserId,
-                        receiverId: targetUserId
-                    })
-                });
-                const data = await response.json();
-                if (data.status && data.status.success) {
-                    alert('Đã gửi lời mời kết bạn!');
-                    addFriendBtn.innerHTML = '<i class="bi bi-clock"></i> Đã gửi lời mời';
-                    addFriendBtn.style.background = '#fef3c7';
-                    addFriendBtn.style.color = '#92400e';
-                    addFriendBtn.disabled = true;
-                } else {
-                    alert(data.status?.displayMessage || 'Gửi lời mời thất bại!');
-                }
-            } catch (error) {
-                alert('Lỗi khi gửi lời mời kết bạn: ' + error.message);
-            }
-        };
-    }
+    // Render nút trạng thái bạn bè
+    const friendActionBtnContainer = document.getElementById('friend-action-btn-container');
+    renderFriendActionButton(friendActionBtnContainer, userData, currentUserId, targetUserId);
     document.addEventListener('keydown', function escHandler(e) {
         if (e.key === 'Escape') {
             overlay.remove();
@@ -1050,5 +962,65 @@ function updateBlockBtnUI(btn, isBlocked) {
         btn.innerHTML = '<i class="bi bi-person-x-fill"></i><br>Chặn';
         btn.style.background = '';
         btn.style.color = '';
+    }
+}
+
+// Hàm render nút trạng thái bạn bè
+async function renderFriendActionButton(container, userData, currentUserId, targetUserId) {
+    let isFriend = false;
+    let isSentRequest = false;
+    let isReceivedRequest = false;
+    try {
+        const friendsRes = await FriendshipService.getFriendships(currentUserId);
+        if (friendsRes.status && friendsRes.status.code === '00' && Array.isArray(friendsRes.data)) {
+            isFriend = friendsRes.data.some(u => String(u.id) === String(targetUserId));
+        }
+        const sentRes = await FriendshipService.getSentRequests(currentUserId);
+        if (sentRes.status && sentRes.status.code === '00' && Array.isArray(sentRes.data)) {
+            isSentRequest = sentRes.data.some(r => {
+                const receiverId = r.receiverId || r.receiver?.id;
+                return String(receiverId) === String(targetUserId);
+            });
+        }
+        const receivedRes = await FriendshipService.getPendingRequests(currentUserId);
+        if (receivedRes.status && receivedRes.status.code === '00' && Array.isArray(receivedRes.data)) {
+            isReceivedRequest = receivedRes.data.some(r => {
+                const senderId = r.senderId || r.sender?.id;
+                return String(senderId) === String(targetUserId);
+            });
+        }
+    } catch (err) {}
+    let friendBtnHtml = '';
+    if (isFriend) {
+        friendBtnHtml = `<button id="friend-status-btn" style="background:#e0f2fe;color:#0284c7;border:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:600;cursor:default;display:flex;align-items:center;gap:8px;" disabled><i class="bi bi-people-fill"></i> Bạn bè</button>`;
+    } else if (isSentRequest) {
+        friendBtnHtml = `<button id="cancel-request-btn" style="background:#fef3c7;color:#92400e;border:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;"><i class="bi bi-clock"></i> Hủy lời mời</button>`;
+    } else if (isReceivedRequest) {
+        friendBtnHtml = `<button id="accept-request-btn" style="background:#d1fae5;color:#059669;border:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;"><i class="bi bi-person-check"></i> Chấp nhận</button>`;
+    } else {
+        friendBtnHtml = `<button id="add-friend-btn" style="background:#f3f4f6;color:#105085;border:1.5px solid #d1d5db;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;"><i class="bi bi-person-plus"></i> Kết bạn</button>`;
+    }
+    container.innerHTML = friendBtnHtml;
+    // Gắn lại sự kiện cho nút
+    const addFriendBtn = container.querySelector('#add-friend-btn');
+    if (addFriendBtn) {
+        addFriendBtn.onclick = async () => {
+            await FriendshipService.sendFriendRequest(currentUserId, targetUserId);
+            await renderFriendActionButton(container, userData, currentUserId, targetUserId);
+        };
+    }
+    const cancelRequestBtn = container.querySelector('#cancel-request-btn');
+    if (cancelRequestBtn) {
+        cancelRequestBtn.onclick = async () => {
+            await FriendshipService.cancelFriendRequest(currentUserId, targetUserId);
+            await renderFriendActionButton(container, userData, currentUserId, targetUserId);
+        };
+    }
+    const acceptRequestBtn = container.querySelector('#accept-request-btn');
+    if (acceptRequestBtn) {
+        acceptRequestBtn.onclick = async () => {
+            await FriendshipService.acceptFriendRequest(targetUserId, currentUserId);
+            await renderFriendActionButton(container, userData, currentUserId, targetUserId);
+        };
     }
 }
