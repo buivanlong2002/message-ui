@@ -1195,8 +1195,15 @@ const ProfileController = {
     displaySearchEmailResult: async function(users) {
         const resultDiv = document.getElementById('search-email-result');
         resultDiv.innerHTML = '';
+
+        const currentUserId = localStorage.getItem('userId');
         if (!users || users.length === 0) {
             resultDiv.innerHTML = '<p>Không tìm thấy người dùng nào.</p>';
+            return;
+        }
+
+        if (users.length === 1 && String(users[0].id) === String(currentUserId)) {
+            resultDiv.innerHTML = '<p>Đây là tài khoản của bạn.</p>';
             return;
         }
         
@@ -1205,7 +1212,6 @@ const ProfileController = {
         
         // Lấy danh sách bạn bè hiện tại từ cache
         let currentFriends = ProfileController.friendsListCache || [];
-        const currentUserId = localStorage.getItem('userId');
         // Lấy danh sách lời mời đã gửi từ backend
         let sentRequests = [];
         try {
@@ -1260,6 +1266,8 @@ const ProfileController = {
             console.warn('Không lấy được danh sách người đã chặn mình:', err.message);
         }
         users.forEach(user => {
+            const isMe = String(user.id) === String(currentUserId);
+            if (isMe) return;
             const isFriend = currentFriends.some(f => String(f.id) === String(user.id));
             
             // Kiểm tra xem đã gửi lời mời kết bạn cho user này chưa
@@ -1279,13 +1287,15 @@ const ProfileController = {
             // Kiểm tra trạng thái chặn
             const isBlockedByMe = blockedUsers.some(b => String(b.id) === String(user.id));
             const isBlockedByUser = blockedByUsers.some(b => String(b.id) === String(user.id));
+
             const item = document.createElement('div');
             item.className = 'search-user-item';
             item.innerHTML = `
                 <img src="${getAvatarUrl(user.avatarUrl)}" alt="Avatar" class="friend-avatar"/>
                 <span class="user-name-clickable" data-user-id="${user.id}" data-user-name="${user.displayName}">${user.displayName} (${user.email})</span>
                 <div class="friend-actions">
-                    ${isBlockedByUser ? `
+                    ${isMe ? `<span class='self-account-label' style='color:#0284c7;font-weight:600;'>Đây là tài khoản của bạn</span>` :
+                    isBlockedByUser ? `
                         <span class="blocked-notice">Bạn đã bị chặn</span>
                     ` : isBlockedByMe ? `
                         <button class="friend-btn" data-action="unblock" data-user-id="${user.id}" data-user-name="${user.displayName}"><i class="bi bi-person-check"></i> Bỏ chặn</button>
