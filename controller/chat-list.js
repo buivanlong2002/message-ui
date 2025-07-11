@@ -34,17 +34,29 @@ function displayConversations(conversations) {
 
         const sender = lastMessage?.lastMessageSenderName || "";
         const content = lastMessage?.lastMessageContent || "";
-        const trimmedContent = content.length > 10 ? content.slice(0, 10) + "..." : content;
+        const trimmedContent = content.length > 30 ? content.slice(0, 30) + "..." : content;
 
         const previewText = lastMessage
             ? `${escapeHtml(sender)}: ${escapeHtml(trimmedContent)}`
             : "Chưa có tin nhắn";
 
-        const previewTime = lastMessage?.lastMessageTimeAgo || (typeof ProfileController !== 'undefined' && ProfileController.formatTimeAgo ? ProfileController.formatTimeAgo(new Date(createdAt)) : formatTime(createdAt));
+        const previewTime = lastMessage?.lastMessageTimeAgo ||
+            (typeof ProfileController !== 'undefined' && ProfileController.formatTimeAgo
+                ? ProfileController.formatTimeAgo(new Date(createdAt))
+                : formatTime(createdAt));
+
         const avatarUrl = getAvatarUrl(chat.avatarUrl);
 
+        // Kiểm tra trạng thái đã xem hay chưa
+        const isSeen = lastMessage?.seen === true;
+
+        // Lớp CSS tùy thuộc vào trạng thái đã xem
+        const previewClass = isSeen ? "chat-preview seen" : "chat-preview unseen";
+        const nameClass = isSeen ? "chat-name" : "chat-name unread";
+        const unreadDot = isSeen ? "" : `<span class="unread-dot">•</span>`;
+
         chatItem.onclick = function () {
-            loadChat(chat.id, this, name, avatarUrl , chat.isGroup);
+            loadChat(chat.id, this, name, avatarUrl, chat.isGroup);
         };
 
         chatItem.innerHTML = `
@@ -55,8 +67,8 @@ function displayConversations(conversations) {
                 onerror="this.onerror=null;this.src='images/default_avatar.jpg';"
             >
             <div style="flex: 1;">
-                <div class="chat-name">${escapeHtml(name)}</div>
-                <div class="chat-preview">${previewText}</div>
+                <div class="${nameClass}">${escapeHtml(name)} ${unreadDot}</div>
+                <div class="${previewClass}">${previewText}</div>
             </div>
             <div class="chat-time">${previewTime}</div>
         `;
