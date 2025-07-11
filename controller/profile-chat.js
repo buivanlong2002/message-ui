@@ -51,7 +51,7 @@ function goToProfile(name ,isGroup, avatarUrl, groupId, isCreator) {
             <div class="profile-section">
                 <div class="section-header">Tùy chọn nhóm</div>
                 <div class="group-actions">
-                    <button onclick="leaveGroup()"><i class="bi bi-box-arrow-right"></i><br>Rời nhóm</button>
+                    ${isCreator ? `<button onclick="deleteGroup()"><i class="bi bi-trash"></i><br>Xóa nhóm</button>` : `<button onclick="leaveGroup()"><i class="bi bi-box-arrow-right"></i><br>Rời nhóm</button>`}
                     <button onclick="clearGroupMessages()"><i class="bi bi-trash"></i><br>Xóa tin nhắn nhóm</button>
                 </div>
             </div>
@@ -1023,4 +1023,8 @@ async function renderFriendActionButton(container, userData, currentUserId, targ
             await renderFriendActionButton(container, userData, currentUserId, targetUserId);
         };
     }
+}
+
+function deleteGroup() {
+    alert("Đã nhấn Xóa nhóm. Chức năng này cần được triển khai thêm!");
 }

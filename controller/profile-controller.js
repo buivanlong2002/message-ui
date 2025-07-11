@@ -59,6 +59,39 @@ const ProfileController = {
                 }
             });
         }
+        // Chọn tệp ảnh đại diện cá nhân ở bảo mật
+        const chooseAvatarBtn = document.getElementById('choose-avatar-btn');
+        const avatarFileInput = document.getElementById('edit-avatar-file');
+        const avatarFilename = document.getElementById('edit-avatar-filename');
+        const editAvatarInput = document.getElementById('edit-avatar');
+        if (chooseAvatarBtn && avatarFileInput && editAvatarInput && avatarFilename) {
+            chooseAvatarBtn.onclick = () => avatarFileInput.click();
+            avatarFileInput.onchange = async function() {
+                if (!avatarFileInput.files || !avatarFileInput.files[0]) return;
+                avatarFilename.textContent = avatarFileInput.files[0].name;
+                // Upload file lên server
+                const formData = new FormData();
+                formData.append('file', avatarFileInput.files[0]);
+                try {
+                    const token = localStorage.getItem('token');
+                    const res = await fetch(`${API_CONFIG.BASE_URL}/users/avatar`, {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + token },
+                        body: formData
+                    });
+                    const avatarUrl = await res.text();
+                    if (avatarUrl && avatarUrl.startsWith('/uploads/')) {
+                        editAvatarInput.value = avatarUrl;
+                    } else {
+                        alert('Upload ảnh đại diện thất bại!');
+                        console.error('Upload avatar error:', avatarUrl);
+                    }
+                } catch (err) {
+                    console.error('Lỗi khi upload ảnh đại diện:', err);
+                    alert('Lỗi khi upload ảnh đại diện!');
+                }
+            };
+        }
     },
 
     // Kiểm tra authentication
