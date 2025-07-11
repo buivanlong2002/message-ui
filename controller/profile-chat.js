@@ -358,8 +358,345 @@ function searchMessages() {
 }
 
 function viewProfileDetails() {
-    // Placeholder: Xử lý logic xem hồ sơ chi tiết
-    alert("Đã nhấn Xem hồ sơ. Chức năng này cần được triển khai thêm!");
+    // Lấy thông tin người dùng hiện tại và conversation hiện tại
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+    const conversationId = window.currentChatId; // ID của conversation hiện tại
+    const currentUserId = localStorage.getItem('userId');
+    
+    if (!conversationId) {
+        alert('Không xác định được cuộc trò chuyện!');
+        return;
+    }
+
+    // Gọi API để lấy thông tin conversation và tìm người đang chat cùng
+    getOtherUserFromConversation(conversationId, currentUserId);
+}
+
+async function getOtherUserFromConversation(conversationId, currentUserId) {
+    try {
+        const token = localStorage.getItem('token');
+        
+        console.log('Đang lấy thông tin conversation:', conversationId);
+        console.log('Current user ID:', currentUserId);
+        
+        // Sử dụng ConversationService để lấy danh sách conversation
+        const response = await fetch(`${API_CONFIG.BASE_URL}/conversations/user/${currentUserId}`, {
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        const data = await response.json();
+        console.log('Conversations API response:', data);
+        
+        if (data.status && data.status.success && data.data) {
+            // Tìm conversation hiện tại trong danh sách
+            const conversation = data.data.find(conv => conv.id === conversationId);
+            console.log('Found conversation:', conversation);
+            console.log('Conversation keys:', Object.keys(conversation));
+            
+            if (!conversation) {
+                alert('Không tìm thấy cuộc trò chuyện!');
+                return;
+            }
+            
+            // Tìm người đang chat cùng (không phải chính mình)
+            let targetUserId = null;
+            
+            // Thử tìm từ members nếu có
+            if (conversation.members && Array.isArray(conversation.members)) {
+                console.log('Members:', conversation.members);
+                const otherUser = conversation.members.find(m => m.id !== currentUserId);
+                if (otherUser) {
+                    targetUserId = otherUser.id;
+                    console.log('Found other user from members:', otherUser);
+                }
+            }
+            
+            // Nếu không tìm được từ members, thử tìm từ conversation name hoặc otherUserId
+            if (!targetUserId) {
+                console.log('Không tìm thấy members, thử cách khác...');
+                
+                // Thử tìm từ otherUserId nếu có
+                if (conversation.otherUserId) {
+                    targetUserId = conversation.otherUserId;
+                    console.log('Found otherUserId:', targetUserId);
+                }
+                // Thử tìm từ conversation name (có thể là tên người khác)
+                else if (conversation.name && conversation.name !== 'Không tên') {
+                    console.log('Conversation name:', conversation.name);
+                    // Cần gọi API để tìm user theo tên
+                    try {
+                        const userResponse = await fetch(`${API_CONFIG.BASE_URL}/users/search?displayName=${encodeURIComponent(conversation.name)}`, {
+                            method: 'GET',
+                            headers: { 'Authorization': 'Bearer ' + token }
+                        });
+                        const userData = await userResponse.json();
+                        console.log('User search response:', userData);
+                        
+                        if (userData.status && userData.status.success && userData.data && userData.data.length > 0) {
+                            const foundUser = userData.data.find(u => u.id !== currentUserId);
+                            if (foundUser) {
+                                targetUserId = foundUser.id;
+                                console.log('Found user by name:', foundUser);
+                            }
+                        }
+                    } catch (searchError) {
+                        console.error('Lỗi khi tìm user theo tên:', searchError);
+                    }
+                }
+            }
+            
+            if (!targetUserId) {
+                alert('Không tìm thấy người đang chat cùng! Conversation: ' + JSON.stringify(conversation, null, 2));
+                return;
+            }
+            
+            // Kiểm tra nếu đang xem profile của chính mình
+            const currentUser = JSON.parse(localStorage.getItem('user'));
+            if (currentUser && (currentUser.id === targetUserId || currentUser.email === targetUserId)) {
+                alert('Đây là trang cá nhân của bạn!');
+                return;
+            }
+            
+            console.log('Loading profile for user ID:', targetUserId);
+            // Gọi API để lấy thông tin chi tiết của người dùng
+            loadOtherUserProfile(targetUserId);
+            
+        } else {
+            alert('Không thể lấy thông tin cuộc trò chuyện: ' + (data.status?.displayMessage || 'Lỗi không xác định'));
+        }
+    } catch (error) {
+        console.error('Lỗi khi lấy thông tin conversation:', error);
+        alert('Lỗi khi tải thông tin cuộc trò chuyện: ' + error.message);
+    }
+}
+
+async function loadOtherUserProfile(userId) {
+    try {
+        const token = localStorage.getItem('token');
+        console.log('Đang gọi API lấy thông tin user:', userId);
+        
+        const response = await fetch(`${API_CONFIG.BASE_URL}/users/${userId}`, {
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        const data = await response.json();
+        console.log('User API response:', data);
+        
+        if (data.status && data.status.success && data.data) {
+            console.log('User data:', data.data);
+            displayOtherUserProfile(data.data);
+        } else {
+            console.error('API error:', data);
+            alert('Không thể lấy thông tin người dùng: ' + (data.status?.displayMessage || 'Lỗi không xác định'));
+        }
+    } catch (error) {
+        console.error('Lỗi khi lấy thông tin người dùng:', error);
+        alert('Lỗi khi tải thông tin người dùng: ' + error.message);
+    }
+}
+
+async function displayOtherUserProfile(userData) {
+    const currentUserId = localStorage.getItem('userId');
+    const targetUserId = userData.id;
+    let isFriend = false;
+    try {
+        const token = localStorage.getItem('token');
+        const friendsRes = await fetch(`${API_CONFIG.BASE_URL}/friendships/friends?userId=${currentUserId}`, {
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const friendsData = await friendsRes.json();
+        if (friendsData.status && friendsData.status.success && Array.isArray(friendsData.data)) {
+            isFriend = friendsData.data.some(u => u.id === targetUserId);
+        }
+    } catch (err) {
+        console.warn('Không kiểm tra được trạng thái bạn bè:', err);
+    }
+
+    const overlay = document.createElement('div');
+    overlay.id = 'other-user-profile-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.45);
+        z-index: 3000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    `;
+
+    const userAvatar = userData.avatarUrl ? getAvatarUrl(userData.avatarUrl) : 'images/default_avatar.jpg';
+    
+    overlay.innerHTML = `
+        <div style="
+            background: #fff;
+            border-radius: 20px;
+            padding: 36px 32px 28px 32px;
+            max-width: 410px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(16,80,133,0.18), 0 1.5px 8px rgba(16,80,133,0.10);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        ">
+            <button id="close-profile-btn" style="
+                position: absolute;
+                top: 16px;
+                right: 18px;
+                background: none;
+                border: none;
+                font-size: 26px;
+                color: #888;
+                cursor: pointer;
+                width: 36px;
+                height: 36px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                transition: background 0.2s;
+            " onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">&times;</button>
+            <img src="${userAvatar}" alt="Avatar" 
+                 style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; 
+                        box-shadow: 0 4px 16px rgba(16,80,133,0.15); margin-bottom: 18px; border: 3px solid #e0e7ef; background: #f8fafc;" 
+                 onerror="this.src='images/default_avatar.jpg'" />
+            <h2 style="margin: 0 0 8px 0; color: #105085; font-size: 25px; font-weight: 700; letter-spacing: 0.5px; text-align: center;">
+                ${userData.displayName || userData.name || userData.username || 'Người dùng'}
+            </h2>
+            <div style="margin-bottom: 18px; min-height: 22px; width: 100%; text-align: center;">
+                <span style="color: #6b7280; font-size: 15px; font-style: ${userData.bio ? 'normal' : 'italic'};">
+                    ${userData.bio ? userData.bio : '<span style=\'color:#b6b6b6\'>Chưa có tiểu sử</span>'}
+                </span>
+            </div>
+            <div style="width: 100%; background: #f8fafc; border-radius: 14px; padding: 18px 18px 10px 18px; margin-bottom: 18px; box-shadow: 0 1px 6px #e5eaf3;">
+                <div style="display: flex; align-items: center; margin-bottom: 13px;">
+                    <i class="bi bi-envelope" style="color: #105085; margin-right: 12px; width: 20px; font-size: 18px;"></i>
+                    <span style="color: #374151; font-weight: 500; min-width: 80px;">Email:</span>
+                    <span style="color: #6b7280; margin-left: 8px;">${userData.email || 'Không có thông tin'}</span>
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 13px;">
+                    <i class="bi bi-telephone" style="color: #105085; margin-right: 12px; width: 20px; font-size: 18px;"></i>
+                    <span style="color: #374151; font-weight: 500; min-width: 80px;">Số điện thoại:</span>
+                    <span style="color: #6b7280; margin-left: 8px;">${userData.phoneNumber || 'Không có thông tin'}</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <i class="bi bi-calendar3" style="color: #105085; margin-right: 12px; width: 20px; font-size: 18px;"></i>
+                    <span style="color: #374151; font-weight: 500; min-width: 80px;">Tham gia:</span>
+                    <span style="color: #6b7280; margin-left: 8px;">
+                        ${userData.createdAt ? new Date(userData.createdAt).toLocaleDateString('vi-VN') : 'Không có thông tin'}
+                    </span>
+                </div>
+            </div>
+            <div style="display: flex; gap: 16px; justify-content: center; width: 100%; margin-bottom: 2px;">
+                <button id="message-user-btn" style="
+                    background: linear-gradient(135deg, #105085, #1a7cb3);
+                    color: white;
+                    border: none;
+                    padding: 12px 28px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 15px;
+                    font-weight: 600;
+                    box-shadow: 0 2px 8px rgba(16,80,133,0.07);
+                    transition: all 0.2s;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                ">
+                    <i class="bi bi-chat-dots"></i>
+                    Nhắn tin
+                </button>
+                ${!isFriend ? `<button id="add-friend-btn" style="
+                    background: #f3f4f6;
+                    color: #105085;
+                    border: 1.5px solid #d1d5db;
+                    padding: 12px 28px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 15px;
+                    font-weight: 600;
+                    box-shadow: 0 2px 8px rgba(16,80,133,0.07);
+                    transition: all 0.2s;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                ">
+                    <i class="bi bi-person-plus"></i>
+                    Kết bạn
+                </button>` : ''}
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    document.getElementById('close-profile-btn').onclick = () => {
+        overlay.remove();
+    };
+    overlay.onclick = (e) => {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    };
+    document.getElementById('message-user-btn').onclick = () => {
+        overlay.remove();
+        if (window.currentChatId === targetUserId) {
+            return;
+        }
+        if (typeof ProfileController !== 'undefined' && ProfileController.startChatWithUser) {
+            // Chỉ truyền object user đơn giản, không truyền object có members hoặc các trường phức tạp
+            const simpleUser = {
+                id: userData.id,
+                displayName: userData.displayName,
+                avatarUrl: userData.avatarUrl
+            };
+            ProfileController.startChatWithUser(targetUserId, simpleUser);
+        }
+    };
+    const addFriendBtn = document.getElementById('add-friend-btn');
+    if (addFriendBtn) {
+        addFriendBtn.onclick = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_CONFIG.BASE_URL}/friendships/send-request`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({
+                        senderId: currentUserId,
+                        receiverId: targetUserId
+                    })
+                });
+                const data = await response.json();
+                if (data.status && data.status.success) {
+                    alert('Đã gửi lời mời kết bạn!');
+                    addFriendBtn.innerHTML = '<i class="bi bi-clock"></i> Đã gửi lời mời';
+                    addFriendBtn.style.background = '#fef3c7';
+                    addFriendBtn.style.color = '#92400e';
+                    addFriendBtn.disabled = true;
+                } else {
+                    alert(data.status?.displayMessage || 'Gửi lời mời thất bại!');
+                }
+            } catch (error) {
+                alert('Lỗi khi gửi lời mời kết bạn: ' + error.message);
+            }
+        };
+    }
+    document.addEventListener('keydown', function escHandler(e) {
+        if (e.key === 'Escape') {
+            overlay.remove();
+            document.removeEventListener('keydown', escHandler);
+        }
+    });
 }
 
 function blockUser() {
