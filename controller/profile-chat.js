@@ -1039,4 +1039,4 @@ function showWelcomeEmptyChat() {
     const welcome = document.getElementById('welcome-empty-chat');
     if (welcome) welcome.style.display = 'flex';
 }
-// Gợi ý: Gọi hideWelcomeEmptyChat() khi user chọn một cuộc trò chuyện, và showWelcomeEmptyChat() khi user thoát hết chat.
+
