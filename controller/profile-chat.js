@@ -557,7 +557,7 @@ async function displayOtherUserProfile(userData) {
     } else {
         friendBtnHtml = `<button id="add-friend-btn" style="background:#f3f4f6;color:#105085;border:1.5px solid #d1d5db;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;"><i class="bi bi-person-plus"></i> Kết bạn</button>`;
     }
-
+    
     overlay.innerHTML = `
         <div style="background: #fff; border-radius: 20px; padding: 36px 32px 28px 32px; max-width: 410px; width: 100%; box-shadow: 0 8px 32px rgba(16,80,133,0.18), 0 1.5px 8px rgba(16,80,133,0.10); position: relative; display: flex; flex-direction: column; align-items: center;">
             <button id="close-profile-btn" style="position: absolute; top: 16px; right: 18px; background: none; border: none; font-size: 26px; color: #888; cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">&times;</button>
