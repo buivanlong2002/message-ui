@@ -147,10 +147,15 @@
                                     <label for="edit-username">Tên hiển thị</label>
                                     <input type="text" id="edit-username" placeholder="Nhập tên hiển thị của bạn">
                                 </div>
+                                <!-- Thay đổi phần ảnh đại diện trong security-edit-info -->
                                 <div class="form-group">
                                     <label for="edit-avatar">Ảnh đại diện </label>
-                                    <input type="text" id="edit-avatar"
-                                           placeholder="Ví dụ: /uploads/avatar.jpg hoặc để trống">
+                                    <div style="display:flex;align-items:center;gap:10px;">
+                                        <input type="file" id="edit-avatar-file" accept="image/*" style="display:none;" />
+                                        <button type="button" id="choose-avatar-btn" class="profile-btn"><i class="bi bi-image"></i> Chọn tệp</button>
+                                        <span id="edit-avatar-filename" style="font-size:13px;color:#666;"></span>
+                                    </div>
+                                    <input type="text" id="edit-avatar" placeholder="Ví dụ: /uploads/avatar.jpg hoặc để trống" style="display:none;" />
                                 </div>
                                 <div class="form-group">
                                     <label for="edit-phone">Số điện thoại</label>
