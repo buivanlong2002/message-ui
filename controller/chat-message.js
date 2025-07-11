@@ -1,4 +1,6 @@
 function loadChat(chatId, element, name, avatarUrl, isGroup) {
+    // Ẩn khối chào mừng khi vào chat
+    if (typeof hideWelcomeEmptyChat === 'function') hideWelcomeEmptyChat();
     closeProfile();
     // Active item
     document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));

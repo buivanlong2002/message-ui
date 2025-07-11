@@ -23,6 +23,7 @@ window.addEventListener("conversationsData", function (event) {
 function displayConversations(conversations) {
     const chatListDiv = document.getElementById("chat-list");
     chatListDiv.innerHTML = "";
+    if (conversations.length === 0 && typeof showWelcomeEmptyChat === 'function') showWelcomeEmptyChat();
 
     conversations.forEach(chat => {
         const chatItem = document.createElement("div");
