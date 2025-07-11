@@ -41,13 +41,13 @@ const MessageStatusService = {
         });
     },
 
-    // 5. Cập nhật trạng thái tin nhắn
-    updateMessageStatus: async (messageStatusId, newStatus, token) => {
-        return await fetchAPI(`/message-statuses/${messageStatusId}?status=${encodeURIComponent(newStatus)}`, {
-            method: "PUT",
+    // 5. Đánh dấu tất cả tin nhắn trong nhóm là đã xem cho user
+    markAllAsSeen: async (conversationId, userId, token) => {
+        return await fetchAPI(`/message-statuses/mark-all-seen?conversationId=${conversationId}&userId=${userId}`, {
+            method: "POST",
             headers: {
                 Authorization: "Bearer " + token,
-            }
+            },
         });
-    }
+    },
 };
