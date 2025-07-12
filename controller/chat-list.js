@@ -16,18 +16,22 @@ let allConversations = [];
 
 // Lắng nghe khi WebSocket trả dữ liệu
 window.addEventListener("conversationsData", function (event) {
+    console.log('Nhận conversations data:', event.detail);
     allConversations = event.detail;
     displayConversations(allConversations);
 });
 
 function displayConversations(conversations) {
     const chatListDiv = document.getElementById("chat-list");
+    const currentActiveChatId = window.currentChatId; // Lưu chat hiện tại đang active
+    
     chatListDiv.innerHTML = "";
     if (conversations.length === 0 && typeof showWelcomeEmptyChat === 'function') showWelcomeEmptyChat();
 
     conversations.forEach(chat => {
         const chatItem = document.createElement("div");
         chatItem.className = "chat-item";
+        chatItem.setAttribute('data-chat-id', chat.id);
 
         const name = chat.name || "Không tên";
         const createdAt = chat.createdAt;
@@ -55,6 +59,14 @@ function displayConversations(conversations) {
         const unreadDot = isSeen ? "" : `<span class="unread-dot">•</span>`;
 
         chatItem.onclick = function () {
+            console.log('Click vào chat item:', chat.id);
+            console.log('Element:', this);
+            
+            // Test active state trước
+            document.querySelectorAll('.chat-item').forEach(item => {
+                console.log('Chat item:', item.getAttribute('data-chat-id'), 'Active:', item.classList.contains('active'));
+            });
+            
             loadChat(chat.id, this, name, avatarUrl, chat.isGroup);
 
             // Gọi API đánh dấu đã xem khi người dùng click vào cuộc trò chuyện
@@ -62,8 +74,6 @@ function displayConversations(conversations) {
             const userId = localStorage.getItem('userId');
             if (token && userId) {
                 MessageStatusService.markAllAsSeen(chat.id, userId, token)
-
-
                     .then(response => {
                         console.log("Đã đánh dấu tin nhắn là đã xem cho cuộc trò chuyện:", chat.id);
                     })
@@ -83,13 +93,22 @@ function displayConversations(conversations) {
             >
             <div style="flex: 1;">
                 <div class="${nameClass}">${escapeHtml(name)} ${unreadDot}</div>
-                <div class="${previewClass}">${previewText}</div>
+                <div class="${previewClass} chat-last-message">${previewText}</div>
             </div>
             <div class="chat-time">${previewTime}</div>
         `;
 
         chatListDiv.appendChild(chatItem);
     });
+    
+    // Khôi phục active state cho chat hiện tại
+    if (currentActiveChatId) {
+        const activeChatItem = document.querySelector(`.chat-item[data-chat-id="${currentActiveChatId}"]`);
+        if (activeChatItem) {
+            activeChatItem.classList.add('active');
+            console.log('Khôi phục active state cho:', currentActiveChatId);
+        }
+    }
 }
 
 function formatTime(isoTime) {
@@ -122,4 +141,4 @@ document.addEventListener("DOMContentLoaded", function() {
             displayConversations(filtered);
         });
     }
-});
+}); 
