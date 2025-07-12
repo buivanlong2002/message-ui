@@ -42,12 +42,10 @@
         });
     },
 
-    editMessage: async (messageId, newContent, token, conversationId = null) => {
-        const requestBody = { messageId, newContent };
-        if (conversationId) {
-            requestBody.conversationId = conversationId;
-        }
-        
+    editMessage: async (messageId, newContent, token, conversationId) => {
+        const requestBody = { messageId, newContent, conversationId };
+        console.log('Edit message request body:', requestBody);
+        console.log('Edit message conversationId:', conversationId);
         return await fetchAPI("/messages/edit", {
             method: "POST",
             headers: {

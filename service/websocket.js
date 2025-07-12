@@ -19,17 +19,18 @@ function connectWebSocket(userId, token) {
         { Authorization: "Bearer " + token },
         function (frame) {
             retryCount = 0;
+            console.log("Kết nối WebSocket thành công");
 
-            // Đăng ký nhận danh sách cuộc trò chuyện
+            // Đăng ký các kênh cần thiết
             subscribeToConversations(userId);
-
-            // Yêu cầu lấy danh sách cuộc trò chuyện ban đầu
-            stompClient.send("/app/conversations/get", {}, JSON.stringify(userId));
-
-            // Đăng ký nhận tin nhắn mới cho tất cả cuộc trò chuyện
             subscribeToNewMessages(userId);
+            subscribeToMessageUpdates(userId); // 👈 Đăng ký nhận tin nhắn chỉnh sửa
+
+            // Gửi yêu cầu lấy danh sách cuộc trò chuyện ban đầu
+            stompClient.send("/app/conversations/get", {}, JSON.stringify(userId));
         },
         function (error) {
+            console.error("Lỗi WebSocket:", error);
             retryCount++;
             setTimeout(() => connectWebSocket(userId, token), 1000);
         }
@@ -53,7 +54,7 @@ function subscribeToConversations(userId) {
 }
 
 /**
- * Đăng ký nhận tin nhắn mới cho tất cả cuộc trò chuyện
+ * Đăng ký nhận tin nhắn mới
  */
 function subscribeToNewMessages(userId) {
     const topic = `/topic/new-message/${userId}`;
@@ -71,13 +72,28 @@ function subscribeToNewMessages(userId) {
 }
 
 /**
- * Đăng ký nhận tin nhắn trong một cuộc trò chuyện cụ thể
+ * Đăng ký nhận tin nhắn đã chỉnh sửa
+ */
+function subscribeToMessageUpdates(userId) {
+    const topic = `/topic/message-updated/${userId}`;
+    if (subscribedTopics.has(topic)) return;
+
+    stompClient.subscribe(topic, function (message) {
+        const updatedMessage = JSON.parse(message.body);
+        const event = new CustomEvent("messageUpdated", {
+            detail: updatedMessage
+        });
+        window.dispatchEvent(event);
+    });
+
+    subscribedTopics.add(topic);
+}
+
+/**
+ * Đăng ký và yêu cầu tin nhắn trong một cuộc trò chuyện
  */
 function subscribeToConversationMessages(conversationId, page = 0, size = 50) {
-    if (!stompClient || !stompClient.connected) {
-
-        return;
-    }
+    if (!stompClient || !stompClient.connected) return;
 
     const userId = localStorage.getItem("userId");
     const topic = `/topic/messages/${conversationId}/${userId}`;
@@ -93,13 +109,13 @@ function subscribeToConversationMessages(conversationId, page = 0, size = 50) {
         subscribedTopics.add(topic);
     }
 
-    // Lấy thời gian cuối cùng xem (nếu có) hoặc sử dụng thời gian hiện tại
+    // Lấy thời gian cuối xem (nếu có)
     const lastSeenTimestamp = localStorage.getItem(`lastSeen_${conversationId}`) || new Date().toISOString();
     stompClient.send("/app/messages/get", {}, JSON.stringify({
         conversationId,
         userId,
-        page: 0,
-        size: 100, // Tăng size để lấy đủ tin nhắn mới
-        afterTimestamp: lastSeenTimestamp // Chỉ lấy tin nhắn sau thời gian cuối cùng xem
+        page,
+        size,
+        afterTimestamp: lastSeenTimestamp
     }));
 }

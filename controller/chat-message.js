@@ -67,6 +67,7 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
 
     // Subscribe to conversation messages and reload
     subscribeToConversationMessages(chatId);
+    subscribeToMessageUpdates(userId)
 
     // Load old messages
     const messageHandler = (event) => {
@@ -313,7 +314,7 @@ function renderMessage(msg, userId) {
            <ul>
              <li onclick="replyMessage('${msg.id}')"><i class="bi bi-reply-fill"></i> Trả lời</li>
              <li onclick="forwardMessage('${msg.id}')"><i class="bi bi-arrow-right-circle-fill"></i> Chuyển tiếp</li>
-             ${isUser ? `<li onclick="editMessage('${msg.id}', '${escapeHtml(msg.content)}')"><i class="bi bi-pencil-fill"></i> Sửa tin nhắn</li>` : ""}
+             ${isUser ? `<li onclick="editMessage('${msg.id}', '${escapeHtml(msg.content)}', '${window.currentChatId}')" data-conversation-id="${window.currentChatId}"><i class="bi bi-pencil-fill"></i> Sửa tin nhắn</li>` : ""}
              ${isUser ? `<li onclick="recallMessage('${msg.id}')"><i class="bi bi-trash-fill"></i> Thu hồi</li>` : ""}
            </ul>
         </div>
@@ -528,9 +529,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         sendButton.addEventListener('click', () => {
-            const chatId = window.currentChatId;
-            if ((inputField.value.trim() !== "" || fileInput.files.length > 0) && chatId) {
-                sendMessage(chatId);
+            if ((inputField.value.trim() !== "" || fileInput.files.length > 0) && window.currentChatId) {
+                sendMessage();
             }
         });
 
@@ -538,9 +538,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (e.key === "Enter") {
                 if (e.shiftKey) return;
                 e.preventDefault();
-                const chatId = window.currentChatId;
-                if ((inputField.value.trim() !== "" || fileInput.files.length > 0) && chatId) {
-                    sendMessage(chatId);
+                if ((inputField.value.trim() !== "" || fileInput.files.length > 0) && window.currentChatId) {
+                    sendMessage();
                 }
             }
         });
@@ -557,14 +556,16 @@ document.addEventListener("DOMContentLoaded", () => {
 /**
  * Gửi tin nhắn với optimistic update
  */
-async function sendMessage(chatId) {
+async function sendMessage() {
     const input = document.getElementById("chat-input");
     const fileInput = document.getElementById("chat-file");
     const previewOverlay = document.querySelector(".file-preview-overlay");
     const replyId = input.getAttribute("data-reply-id");
     const editId = input.getAttribute("data-edit-id");
+    const editConversationId = input.getAttribute("data-edit-conversation-id");
     const content = input.value.trim();
     const files = fileInput.files;
+    const chatId = window.currentChatId;
 
     if (!content && (!files || files.length === 0)) return;
     if (!chatId) return;
@@ -631,7 +632,12 @@ async function sendMessage(chatId) {
     formData.append("senderId", userId);
     if (content) formData.append("content", content);
     if (replyId) formData.append("replyId", replyId);
-    if (editId) formData.append("messageId", editId);
+    if (editId) {
+        formData.append("messageId", editId);
+        if (editConversationId) {
+            formData.append("conversationId", editConversationId);
+        }
+    }
 
     const hasFiles = files && files.length > 0;
     let messageType = "TEXT";
@@ -652,8 +658,14 @@ async function sendMessage(chatId) {
         // Kiểm tra xem có phải đang edit tin nhắn không
         if (editId) {
             // Gọi API edit message
-            response = await MessageService.editMessage(editId, content, token, chatId);
-            console.log('Đang edit tin nhắn:', editId, 'với nội dung:', content, 'trong conversation:', chatId);
+            console.log('Edit message params:', {
+                messageId: editId,
+                content: content,
+                token: token ? 'Bearer ' + token.substring(0, 20) + '...' : 'No token',
+                conversationId: editConversationId || chatId
+            });
+            response = await MessageService.editMessage(editId, content, token, editConversationId || chatId);
+            console.log('Đang edit tin nhắn:', editId, 'với nội dung:', content, 'trong conversation:', editConversationId || chatId);
         } else {
             // Gọi API send message
             response = await MessageService.sendMessage(formData, token);
@@ -682,6 +694,7 @@ async function sendMessage(chatId) {
                 // Reset input
                 input.value = "";
                 input.removeAttribute("data-edit-id");
+                input.removeAttribute("data-edit-conversation-id");
                 input.placeholder = "Nhập tin nhắn...";
             } else {
                 // Remove temporary message
@@ -714,6 +727,7 @@ async function sendMessage(chatId) {
                 input.value = "";
                 input.removeAttribute("data-reply-id");
                 input.removeAttribute("data-edit-id");
+                input.removeAttribute("data-edit-conversation-id");
                 input.placeholder = "Nhập tin nhắn...";
                 input.style.paddingTop = "12px";
                 fileInput.value = "";
@@ -769,10 +783,23 @@ function forwardMessage(messageId) {
     // TODO: Add logic for forwarding message
 }
 
-function editMessage(messageId, content) {
+function editMessage(messageId, content, conversationId) {
     const inputField = document.getElementById("chat-input");
     inputField.value = content;
+    console.log("Edit message called with:", {
+        messageId: messageId,
+        content: content,
+        conversationId: conversationId,
+        windowCurrentChatId: window.currentChatId
+    });
     inputField.setAttribute("data-edit-id", messageId);
+    if (conversationId) {
+        inputField.setAttribute("data-edit-conversation-id", conversationId);
+        console.log("Set data-edit-conversation-id to:", conversationId);
+    } else {
+        console.warn("No conversationId provided, using window.currentChatId:", window.currentChatId);
+        inputField.setAttribute("data-edit-conversation-id", window.currentChatId);
+    }
     inputField.placeholder = "Chỉnh sửa tin nhắn...";
     inputField.focus();
 }
