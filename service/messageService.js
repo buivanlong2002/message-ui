@@ -1,16 +1,15 @@
+const MessageService = {
+    sendMessage: async (formData, token) => {
 
- const MessageService = {
-     sendMessage: async (formData, token) => {
+        return await fetchAPI("/messages/send", {
+            method: "POST",
+            headers: {
+                Authorization: "Bearer " + token,
 
-         return await fetchAPI("/messages/send", {
-             method: "POST",
-             headers: {
-                 Authorization: "Bearer " + token,
-
-             },
-             body: formData,
-         });
-     },
+            },
+            body: formData,
+        });
+    },
 
     getMessagesByConversation: async (conversationId, page = 0, size = 20, token) => {
         return await fetchAPI(`/messages/get-by-conversation?conversationId=${conversationId}&page=${page}&size=${size}`, {
@@ -28,7 +27,7 @@
             headers: {
                 Authorization: "Bearer " + token,
             },
-            body: JSON.stringify({ messageId, conversationId }),
+            body: JSON.stringify({messageId, conversationId}),
         });
     },
 
@@ -38,14 +37,12 @@
             headers: {
                 Authorization: "Bearer " + token,
             },
-            body: JSON.stringify({ senderId, conversationId }),
+            body: JSON.stringify({senderId, conversationId}),
         });
     },
 
     editMessage: async (messageId, newContent, token, conversationId) => {
-        const requestBody = { messageId, newContent, conversationId };
-        console.log('Edit message request body:', requestBody);
-        console.log('Edit message conversationId:', conversationId);
+        const requestBody = {messageId, newContent, conversationId};
         return await fetchAPI("/messages/edit", {
             method: "POST",
             headers: {
@@ -53,6 +50,15 @@
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(requestBody),
+        });
+    },
+
+    recallMessage: async (messageId, userId, token) => {
+        return await fetchAPI(`/messages/${messageId}/recall?userId=${userId}`, {
+            method: "PUT",
+            headers: {
+                Authorization: "Bearer " + token,
+            }
         });
     }
 };

@@ -231,6 +231,63 @@
     </div>
 </div>
 
+<!-- Modal chuyển tiếp tin nhắn -->
+<div id="forward-message-modal" class="forward-modal" style="display: none;">
+    <div class="forward-modal-content">
+        <div class="forward-modal-header">
+            <h3><i class="bi bi-arrow-right-circle-fill"></i> Chuyển tiếp tin nhắn</h3>
+            <button id="forward-modal-close" class="forward-modal-close">×</button>
+        </div>
+        
+        <div class="forward-modal-body">
+            <!-- Tab navigation -->
+            <div class="forward-tabs">
+                <button class="forward-tab active" data-tab="conversations">
+                    <i class="bi bi-chat-dots-fill"></i> Cuộc trò chuyện
+                </button>
+                <button class="forward-tab" data-tab="friends">
+                    <i class="bi bi-people-fill"></i> Bạn bè
+                </button>
+            </div>
+            
+            <!-- Search box -->
+            <div class="forward-search-container">
+                <input type="text" id="forward-search-input" placeholder="Tìm kiếm..." class="forward-search-input">
+                <i class="bi bi-search forward-search-icon"></i>
+            </div>
+            
+            <!-- Tab content -->
+            <div class="forward-tab-content">
+                <!-- Conversations tab -->
+                <div id="forward-conversations-tab" class="forward-tab-panel active">
+                    <div id="forward-conversations-list" class="forward-list">
+                        <!-- Danh sách cuộc trò chuyện sẽ được render ở đây -->
+                    </div>
+                </div>
+                
+                <!-- Friends tab -->
+                <div id="forward-friends-tab" class="forward-tab-panel">
+                    <div id="forward-friends-list" class="forward-list">
+                        <!-- Danh sách bạn bè sẽ được render ở đây -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="forward-modal-footer">
+            <div class="forward-selected-info">
+                <span id="forward-selected-count">0</span> cuộc trò chuyện được chọn
+            </div>
+            <div class="forward-actions">
+                <button id="forward-cancel-btn" class="forward-btn secondary">Hủy</button>
+                <button id="forward-send-btn" class="forward-btn primary" disabled>
+                    <i class="bi bi-send-fill"></i> Gửi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Scripts -->
 <script src="controller/api.js"></script>
 <script src="service/websocket.js"></script>
@@ -245,6 +302,7 @@
 <script src="controller/chat-message.js"></script>
 <script src="controller/profile-chat.js"></script>
 <script src="controller/profile-controller.js"></script>
+<script src="controller/message-context-menu.js"></script>
 <!-- Inline Script for UI Interactions -->
 <script>
     document.getElementById("confirm-logout").addEventListener("click", function () {

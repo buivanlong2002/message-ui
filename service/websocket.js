@@ -90,6 +90,24 @@ function subscribeToMessageUpdates(userId) {
 }
 
 /**
+ * Đăng ký nhận tin nhắn đã được thu hồi
+ */
+function subscribeToMessageRecalls(userId) {
+    const topic = `/topic/message-recalled/${userId}`;
+    if (subscribedTopics.has(topic)) return;
+
+    stompClient.subscribe(topic, function (message) {
+        const recalledMessage = JSON.parse(message.body);
+        const event = new CustomEvent("messageRecalled", {
+            detail: recalledMessage
+        });
+        window.dispatchEvent(event);
+    });
+
+    subscribedTopics.add(topic);
+}
+
+/**
  * Đăng ký và yêu cầu tin nhắn trong một cuộc trò chuyện
  */
 function subscribeToConversationMessages(conversationId, page = 0, size = 50) {

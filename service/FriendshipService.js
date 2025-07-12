@@ -53,5 +53,16 @@ const FriendshipService = {
         return await fetchAPI(`/friendships/reject?senderId=${senderId}&receiverId=${receiverId}`, {
             method: "POST"
         });
-    }
+    },
+
+    // 9. Lấy danh sách bạn bè của user hiện tại
+    getFriends: async (token) => {
+        const userId = localStorage.getItem('userId');
+        return await fetchAPI(`/friendships/friends?userId=${userId}`, {
+            method: "GET",
+            headers: {
+                Authorization: "Bearer " + token,
+            },
+        });
+    },
 };

@@ -74,4 +74,27 @@ const ConversationService = {
             },
         });
     },
+
+    // 8. Lấy tất cả cuộc trò chuyện của user hiện tại
+    getConversations: async (token) => {
+        const userId = localStorage.getItem('userId');
+        return await fetchAPI(`/conversations/user/${userId}`, {
+            method: "GET",
+            headers: {
+                Authorization: "Bearer " + token,
+            },
+        });
+    },
+
+    // 9. Tạo cuộc trò chuyện mới
+    createConversation: async (conversationData, token) => {
+        return await fetchAPI(`/conversations/create`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + token,
+            },
+            body: JSON.stringify(conversationData),
+        });
+    },
 };
