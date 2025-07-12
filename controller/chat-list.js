@@ -39,7 +39,7 @@ function displayConversations(conversations) {
 
         const sender = lastMessage?.lastMessageSenderName || "";
         const content = lastMessage?.lastMessageContent || "";
-        const trimmedContent = content.length > 30 ? content.slice(0, 30) + "..." : content;
+        const trimmedContent = content.length > 15 ? content.slice(0, 15) + "..." : content;
 
         const previewText = lastMessage
             ? `${escapeHtml(sender)}: ${escapeHtml(trimmedContent)}`

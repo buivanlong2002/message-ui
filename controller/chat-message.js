@@ -67,7 +67,8 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
 
     // Subscribe to conversation messages and reload
     subscribeToConversationMessages(chatId);
-    subscribeToMessageUpdates(userId)
+    subscribeToMessageUpdates(userId);
+    subscribeToMessageRecalls(userId);
 
     // Load old messages
     const messageHandler = (event) => {
@@ -122,6 +123,30 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
         // Prevent duplicate messages
         const existingMessage = document.querySelector(`.message-wrapper[data-message-id="${message.id}"]`);
         if (existingMessage) {
+            // Kiểm tra xem có phải tin nhắn đã được thu hồi không
+            if (message.recalled) {
+                existingMessage.innerHTML = `
+                    <div class="message-bubble">
+                        <div class="message-content text-muted">[Tin nhắn đã được thu hồi]</div>
+                    </div>
+                `;
+                existingMessage.setAttribute('data-recalled', 'true');
+                
+                // Cập nhật chat list nếu cần
+                const chatItem = document.querySelector(`.chat-item[data-chat-id="${conversationId}"]`);
+                if (chatItem) {
+                    const lastMessageEl = chatItem.querySelector(".chat-last-message");
+                    if (lastMessageEl) {
+                        const messages = document.querySelectorAll('.message-wrapper');
+                        const lastMessage = messages[messages.length - 1];
+                        if (lastMessage && lastMessage.getAttribute('data-message-id') === message.id) {
+                            lastMessageEl.textContent = "[Tin nhắn đã được thu hồi]";
+                        }
+                    }
+                }
+                return;
+            }
+            
             // Nếu là tin nhắn đã chỉnh sửa, cập nhật nội dung và trạng thái
             const messageContent = existingMessage.querySelector('.message-content');
             if (messageContent) {
@@ -151,7 +176,9 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
         if (chatItem) {
             const lastMessageEl = chatItem.querySelector(".chat-last-message");
             if (lastMessageEl) {
-                lastMessageEl.textContent = message.content || "[File]";
+                const content = message.content || "[File]";
+                const trimmedContent = content.length > 15 ? content.slice(0, 15) + "..." : content;
+                lastMessageEl.textContent = trimmedContent;
             }
             
             // Di chuyển chat item lên đầu danh sách
@@ -178,10 +205,41 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
     };
     window.addEventListener("newMessageReceived", realtimeHandler);
 
+    // Handle message recalls
+    const recallHandler = (event) => {
+        const {messageId, conversationId} = event.detail;
+        if (conversationId !== chatId) return;
+
+        const messageElement = document.querySelector(`.message-wrapper[data-message-id="${messageId}"]`);
+        if (messageElement) {
+            messageElement.innerHTML = `
+                <div class="message-bubble">
+                    <div class="message-content text-muted">[Tin nhắn đã được thu hồi]</div>
+                </div>
+            `;
+            messageElement.setAttribute('data-recalled', 'true');
+            
+            // Cập nhật chat list nếu cần
+            const chatItem = document.querySelector(`.chat-item[data-chat-id="${conversationId}"]`);
+            if (chatItem) {
+                const lastMessageEl = chatItem.querySelector(".chat-last-message");
+                if (lastMessageEl) {
+                    const messages = document.querySelectorAll('.message-wrapper');
+                    const lastMessage = messages[messages.length - 1];
+                    if (lastMessage && lastMessage.getAttribute('data-message-id') === messageId) {
+                        lastMessageEl.textContent = "[Tin nhắn đã được thu hồi]";
+                    }
+                }
+            }
+        }
+    };
+    window.addEventListener("messageRecalled", recallHandler);
+
     // Cleanup when switching conversations or unloading page
     const cleanup = () => {
         window.removeEventListener("conversationMessages", messageHandler);
         window.removeEventListener("newMessageReceived", realtimeHandler);
+        window.removeEventListener("messageRecalled", recallHandler);
     };
     window.addEventListener('chatChanged', cleanup);
     window.addEventListener('beforeunload', cleanup);
@@ -309,7 +367,7 @@ function renderMessage(msg, userId) {
         editedInfoHtml = `<div class="message-edited">(Đã chỉnh sửa)</div>`;
     }
 
-    const contextMenuHtml = `
+    const contextMenuHtml = msg.recalled ? '' : `
         <div class="message-context-menu">
            <ul>
              <li onclick="replyMessage('${msg.id}')"><i class="bi bi-reply-fill"></i> Trả lời</li>
@@ -714,10 +772,12 @@ async function sendMessage() {
                 // Update chat list
                 const chatItem = document.querySelector(`.chat-item[data-chat-id="${chatId}"]`);
                 if (chatItem) {
-                    const lastMessageEl = chatItem.querySelector(".chat-last-message");
-                    if (lastMessageEl) {
-                        lastMessageEl.textContent = content || "[File]";
-                    }
+                                    const lastMessageEl = chatItem.querySelector(".chat-last-message");
+                if (lastMessageEl) {
+                    const messageContent = content || "[File]";
+                    const trimmedContent = messageContent.length > 15 ? messageContent.slice(0, 15) + "..." : messageContent;
+                    lastMessageEl.textContent = trimmedContent;
+                }
                     chatItem.parentNode.prepend(chatItem);
                     const unreadBadge = chatItem.querySelector(".unread-count");
                     if (unreadBadge) unreadBadge.remove();
@@ -779,8 +839,12 @@ function replyMessage(messageId) {
 }
 
 function forwardMessage(messageId) {
-    alert(`Chuyển tiếp tin nhắn ${messageId}`);
-    // TODO: Add logic for forwarding message
+    // Sử dụng ForwardMessageController để mở modal chuyển tiếp
+    if (typeof forwardMessageController !== 'undefined') {
+        forwardMessageController.openModal(messageId);
+    } else {
+        alert('Tính năng chuyển tiếp tin nhắn chưa sẵn sàng');
+    }
 }
 
 function editMessage(messageId, content, conversationId) {
@@ -806,8 +870,15 @@ function editMessage(messageId, content, conversationId) {
 
 async function recallMessage(messageId) {
     const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
+    
+    if (!token || !userId) {
+        alert("Vui lòng đăng nhập lại");
+        return;
+    }
+    
     try {
-        const response = await MessageService.recallMessage(messageId, token);
+        const response = await MessageService.recallMessage(messageId, userId, token);
         if (response.status.code === "00" && response.status.success) {
             const messageElement = document.querySelector(`.message-wrapper[data-message-id="${messageId}"]`);
             if (messageElement) {
@@ -816,6 +887,23 @@ async function recallMessage(messageId) {
                         <div class="message-content text-muted">[Tin nhắn đã được thu hồi]</div>
                     </div>
                 `;
+                
+                // Cập nhật trạng thái thu hồi
+                messageElement.setAttribute('data-recalled', 'true');
+                
+                // Cập nhật chat list nếu tin nhắn này là tin nhắn cuối cùng
+                const chatItem = document.querySelector(`.chat-item[data-chat-id="${window.currentChatId}"]`);
+                if (chatItem) {
+                    const lastMessageEl = chatItem.querySelector(".chat-last-message");
+                    if (lastMessageEl && lastMessageEl.textContent.trim() !== "[Tin nhắn đã được thu hồi]") {
+                        // Kiểm tra xem có phải tin nhắn cuối cùng không
+                        const messages = document.querySelectorAll('.message-wrapper');
+                        const lastMessage = messages[messages.length - 1];
+                        if (lastMessage && lastMessage.getAttribute('data-message-id') === messageId) {
+                            lastMessageEl.textContent = "[Tin nhắn đã được thu hồi]";
+                        }
+                    }
+                }
             }
         } else {
             alert("Thu hồi tin nhắn thất bại: " + (response.status.message || "Không rõ lý do"));
