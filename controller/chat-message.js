@@ -82,15 +82,19 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
                 let messageEl = document.querySelector(`.message-wrapper[data-message-id="${msg.id}"]`);
                 if (messageEl) {
                     // Nếu đã có, cập nhật nội dung
-                    const messageContent = messageEl.querySelector('.message-content');
-                    if (messageContent) {
-                        messageContent.innerHTML = `<div class="message-text">${escapeHtml(msg.content)}</div>`;
-                    }
-                    // Thêm indicator "Đã chỉnh sửa" nếu cần
-                    if (msg.edited) {
-                        const messageTime = messageEl.querySelector('.message-time');
-                        if (messageTime && !messageTime.querySelector('.message-edited')) {
-                            messageTime.innerHTML += '<div class="message-edited">(Đã chỉnh sửa)</div>';
+                    if (msg.recalled) {
+                        renderRecalledMessage(messageEl, msg, userId);
+                    } else {
+                        const messageContent = messageEl.querySelector('.message-content');
+                        if (messageContent) {
+                            messageContent.innerHTML = `<div class="message-text">${escapeHtml(msg.content)}</div>`;
+                        }
+                        // Thêm indicator "Đã chỉnh sửa" nếu cần
+                        if (msg.edited) {
+                            const messageTime = messageEl.querySelector('.message-time');
+                            if (messageTime && !messageTime.querySelector('.message-edited')) {
+                                messageTime.innerHTML += '<div class="message-edited">(Đã chỉnh sửa)</div>';
+                            }
                         }
                     }
                 } else {
@@ -125,12 +129,7 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
         if (existingMessage) {
             // Kiểm tra xem có phải tin nhắn đã được thu hồi không
             if (message.recalled) {
-                existingMessage.innerHTML = `
-                    <div class="message-bubble">
-                        <div class="message-content text-muted">[Tin nhắn đã được thu hồi]</div>
-                    </div>
-                `;
-                existingMessage.setAttribute('data-recalled', 'true');
+                renderRecalledMessage(existingMessage, message, userId);
                 
                 // Cập nhật chat list nếu cần
                 const chatItem = document.querySelector(`.chat-item[data-chat-id="${conversationId}"]`);
@@ -207,17 +206,12 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
 
     // Handle message recalls
     const recallHandler = (event) => {
-        const {messageId, conversationId} = event.detail;
+        const {messageId, conversationId, message} = event.detail;
         if (conversationId !== chatId) return;
 
         const messageElement = document.querySelector(`.message-wrapper[data-message-id="${messageId}"]`);
-        if (messageElement) {
-            messageElement.innerHTML = `
-                <div class="message-bubble">
-                    <div class="message-content text-muted">[Tin nhắn đã được thu hồi]</div>
-                </div>
-            `;
-            messageElement.setAttribute('data-recalled', 'true');
+        if (messageElement && message) {
+            renderRecalledMessage(messageElement, message, userId);
             
             // Cập nhật chat list nếu cần
             const chatItem = document.querySelector(`.chat-item[data-chat-id="${conversationId}"]`);
@@ -246,6 +240,33 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
 }
 
 /**
+ * Render tin nhắn thu hồi với avatar
+ */
+function renderRecalledMessage(messageElement, msg, userId) {
+    const isUser = String(msg.sender.senderId) === String(userId);
+    const senderAvatar = msg.sender?.avatarSender
+        ? getAvatarUrl(msg.sender.avatarSender)
+        : "images/default_avatar.jpg";
+    const senderName = msg.sender?.nameSender || "Unknown";
+    
+    const senderInfoHtml = isUser
+        ? ""
+        : `<div class="message-sender">${escapeHtml(senderName)}</div>`;
+        
+    messageElement.innerHTML = `
+        <div class="message-avatar">
+            <img src="${senderAvatar}" alt="Avatar" class="avatar-image"
+                 onerror="this.onerror=null;this.src='images/default_avatar.jpg';"/>
+        </div>
+        <div class="message-bubble">
+            ${senderInfoHtml}
+            <div class="message-content text-muted">[Tin nhắn đã được thu hồi]</div>
+        </div>
+    `;
+    messageElement.setAttribute('data-recalled', 'true');
+}
+
+/**
  * Render tin nhắn
  */
 function renderMessage(msg, userId) {
@@ -255,11 +276,26 @@ function renderMessage(msg, userId) {
 
     // Kiểm tra tin nhắn đã được thu hồi
     if (msg.recalled) {
+        const senderAvatar = msg.sender?.avatarSender
+            ? getAvatarUrl(msg.sender.avatarSender)
+            : "images/default_avatar.jpg";
+        const senderName = msg.sender?.nameSender || "Unknown";
+        
+        const senderInfoHtml = isUser
+            ? ""
+            : `<div class="message-sender">${escapeHtml(senderName)}</div>`;
+            
         wrapper.innerHTML = `
+            <div class="message-avatar">
+                <img src="${senderAvatar}" alt="Avatar" class="avatar-image"
+                     onerror="this.onerror=null;this.src='images/default_avatar.jpg';"/>
+            </div>
             <div class="message-bubble">
+                ${senderInfoHtml}
                 <div class="message-content text-muted">[Tin nhắn đã được thu hồi]</div>
             </div>
         `;
+        wrapper.setAttribute('data-recalled', 'true');
         return wrapper;
     }
 
@@ -882,14 +918,16 @@ async function recallMessage(messageId) {
         if (response.status.code === "00" && response.status.success) {
             const messageElement = document.querySelector(`.message-wrapper[data-message-id="${messageId}"]`);
             if (messageElement) {
-                messageElement.innerHTML = `
-                    <div class="message-bubble">
-                        <div class="message-content text-muted">[Tin nhắn đã được thu hồi]</div>
-                    </div>
-                `;
+                // Lấy thông tin tin nhắn từ element hiện tại
+                const messageData = {
+                    sender: {
+                        senderId: messageElement.classList.contains('user') ? userId : 'other',
+                        avatarSender: messageElement.querySelector('.avatar-image')?.src || null,
+                        nameSender: messageElement.querySelector('.message-sender')?.textContent || 'Unknown'
+                    }
+                };
                 
-                // Cập nhật trạng thái thu hồi
-                messageElement.setAttribute('data-recalled', 'true');
+                renderRecalledMessage(messageElement, messageData, userId);
                 
                 // Cập nhật chat list nếu tin nhắn này là tin nhắn cuối cùng
                 const chatItem = document.querySelector(`.chat-item[data-chat-id="${window.currentChatId}"]`);
