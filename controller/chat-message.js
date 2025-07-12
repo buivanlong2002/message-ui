@@ -4,7 +4,17 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
     closeProfile();
     // Active item
     document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
-    if (element) element.classList.add('active');
+    if (element) {
+        element.classList.add('active');
+        console.log('Đã active chat item:', element);
+    } else {
+        // Nếu không có element, tìm theo chatId
+        const chatItem = document.querySelector(`.chat-item[data-chat-id="${chatId}"]`);
+        if (chatItem) {
+            chatItem.classList.add('active');
+            console.log('Đã active chat item theo chatId:', chatItem);
+        }
+    }
 
     // Token & userId
     const token = localStorage.getItem('token');
@@ -111,12 +121,22 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
             if (lastMessageEl) {
                 lastMessageEl.textContent = message.content || "[File]";
             }
+            
+            // Di chuyển chat item lên đầu danh sách
             chatItem.parentNode.prepend(chatItem);
+            
+            // Xóa unread badge nếu có
             const unreadBadge = chatItem.querySelector(".unread-count");
             if (unreadBadge) unreadBadge.remove();
-
-            // Tải lại tin nhắn để đảm bảo đồng bộ
+            
+            // Đảm bảo active state được giữ nguyên nếu đây là chat hiện tại
             if (conversationId === window.currentChatId) {
+                // Xóa active từ tất cả chat items
+                document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
+                // Thêm active cho chat item hiện tại
+                chatItem.classList.add('active');
+                
+                // Tải lại tin nhắn để đảm bảo đồng bộ
                 subscribeToConversationMessages(conversationId);
             }
         }
