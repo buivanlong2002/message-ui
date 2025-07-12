@@ -249,20 +249,49 @@ function renderRecalledMessage(messageElement, msg, userId) {
         : "images/default_avatar.jpg";
     const senderName = msg.sender?.nameSender || "Unknown";
     
-    const senderInfoHtml = isUser
-        ? ""
-        : `<div class="message-sender">${escapeHtml(senderName)}</div>`;
-        
-    messageElement.innerHTML = `
-        <div class="message-avatar">
-            <img src="${senderAvatar}" alt="Avatar" class="avatar-image"
-                 onerror="this.onerror=null;this.src='images/default_avatar.jpg';"/>
-        </div>
-        <div class="message-bubble">
-            ${senderInfoHtml}
-            <div class="message-content text-muted">[Tin nhắn đã được thu hồi]</div>
-        </div>
-    `;
+    // Cập nhật avatar nếu cần
+    const avatarElement = messageElement.querySelector('.message-avatar img');
+    if (avatarElement) {
+        avatarElement.src = senderAvatar;
+        avatarElement.onerror = function() {
+            this.src = 'images/default_avatar.jpg';
+        };
+    }
+    
+    // Cập nhật tên người gửi nếu cần
+    const senderElement = messageElement.querySelector('.message-sender');
+    if (!isUser && senderElement) {
+        senderElement.textContent = senderName;
+    } else if (!isUser && !senderElement) {
+        // Thêm tên người gửi nếu chưa có
+        const messageBubble = messageElement.querySelector('.message-bubble');
+        if (messageBubble) {
+            const senderDiv = document.createElement('div');
+            senderDiv.className = 'message-sender';
+            senderDiv.textContent = senderName;
+            messageBubble.insertBefore(senderDiv, messageBubble.firstChild);
+        }
+    }
+    
+    // Thay thế nội dung tin nhắn bằng nội dung thu hồi
+    const messageContent = messageElement.querySelector('.message-content');
+    if (messageContent) {
+        messageContent.innerHTML = '<div class="text-muted">[Tin nhắn đã được thu hồi]</div>';
+        messageContent.className = 'message-content text-muted';
+    }
+    
+    // Xóa context menu nếu có
+    const contextMenu = messageElement.querySelector('.message-context-menu');
+    if (contextMenu) {
+        contextMenu.remove();
+    }
+    
+    // Xóa thời gian và thông tin khác
+    const messageTime = messageElement.querySelector('.message-time');
+    if (messageTime) {
+        messageTime.remove();
+    }
+    
     messageElement.setAttribute('data-recalled', 'true');
 }
 
@@ -292,7 +321,9 @@ function renderMessage(msg, userId) {
             </div>
             <div class="message-bubble">
                 ${senderInfoHtml}
-                <div class="message-content text-muted">[Tin nhắn đã được thu hồi]</div>
+                <div class="message-content text-muted">
+                    <div class="text-muted">[Tin nhắn đã được thu hồi]</div>
+                </div>
             </div>
         `;
         wrapper.setAttribute('data-recalled', 'true');
