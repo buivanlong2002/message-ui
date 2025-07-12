@@ -72,7 +72,7 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
                 container.appendChild(messageEl);
             });
             // Cập nhật seen status cho tin nhắn cuối cùng
-            setTimeout(updateSeenStatusForLastMessage, 0);
+            setTimeout(updateSeenStatusForLastMessage, 100);
         } else {
             container.innerHTML = `<div class="empty-chat">Chưa có tin nhắn nào</div>`;
         }
@@ -99,7 +99,7 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
         messageEl.setAttribute('data-message-id', message.id);
         container.appendChild(messageEl);
         // Cập nhật seen status cho tin nhắn cuối cùng
-        setTimeout(updateSeenStatusForLastMessage, 0);
+        setTimeout(updateSeenStatusForLastMessage, 100);
         requestAnimationFrame(() => {
             container.scrollTop = container.scrollHeight;
         });
@@ -247,12 +247,8 @@ function renderMessage(msg, userId) {
                 displayName: seen.displayName || "Unknown"
             };
         });
-        // Tạo HTML cho avatars
-        const avatarsHtml = seenAvatars.map(seen => {
-            const userLabel = seen.isCurrentUser ? "bạn" : seen.displayName;
-            return `<img src="${seen.avatarUrl}" alt="${userLabel}" class="seen-avatar" title="${userLabel} đã xem" onerror="this.src='images/default_avatar.jpg';"/>`;
-        }).join("");
-        seenInfoHtml = `<div class="message-seen" style="display: none;"><div class="seen-avatars">${avatarsHtml}</div></div>`;
+        // Lưu thông tin seen vào data attribute để sử dụng sau
+        wrapper.setAttribute('data-seen-users', JSON.stringify(seenAvatars));
     }
 
     // Xử lý thông tin đã chỉnh sửa
@@ -285,7 +281,6 @@ function renderMessage(msg, userId) {
                 ${time}
                 ${editedInfoHtml}
             </div>
-            ${seenInfoHtml}
             ${contextMenuHtml}
         </div>
     `;
@@ -305,7 +300,7 @@ function formatTimeAgo(dateString) {
 }
 
 /**
- * Cập nhật seen status cho tin nhắn cuối cùng
+ * Cập nhật seen status cho tin nhắn cuối cùng - Facebook style
  */
 function updateSeenStatusForLastMessage() {
     const container = document.getElementById("chat-messages");
@@ -314,19 +309,80 @@ function updateSeenStatusForLastMessage() {
     const messages = Array.from(container.children);
     if (messages.length === 0) return;
     
-    // Ẩn tất cả seen status trước
-    messages.forEach(msg => {
-        const seenEl = msg.querySelector('.message-seen');
-        if (seenEl) {
-            seenEl.style.display = 'none';
-        }
-    });
+    // Xóa seen status container cũ nếu có
+    const oldSeenContainer = container.querySelector('.seen-status-container');
+    if (oldSeenContainer) {
+        oldSeenContainer.remove();
+    }
     
-    // Hiển thị seen status cho tin nhắn cuối cùng
-    const lastMessage = messages[messages.length - 1];
-    const seenEl = lastMessage.querySelector('.message-seen');
-    if (seenEl) {
-        seenEl.style.display = 'block';
+    // Tìm tin nhắn cuối cùng có thông tin seen
+    let lastMessageWithSeen = null;
+    for (let i = messages.length - 1; i >= 0; i--) {
+        const message = messages[i];
+        const seenUsersData = message.getAttribute('data-seen-users');
+        if (seenUsersData) {
+            lastMessageWithSeen = message;
+            break;
+        }
+    }
+    
+    if (!lastMessageWithSeen) return;
+    
+    // Xác định vị trí hiển thị dựa trên tin nhắn cuối cùng
+    const isLastMessageFromUser = lastMessageWithSeen.classList.contains('user');
+    
+    try {
+        const seenUsers = JSON.parse(lastMessageWithSeen.getAttribute('data-seen-users'));
+        if (!seenUsers || seenUsers.length === 0) return;
+        
+        // Tạo seen status container
+        const seenContainer = document.createElement('div');
+        seenContainer.className = 'seen-status-container';
+        
+        // Thêm class để xác định vị trí hiển thị
+        if (isLastMessageFromUser) {
+            seenContainer.classList.add('seen-status-right');
+        } else {
+            seenContainer.classList.add('seen-status-left');
+        }
+        
+        // Tạo container cho avatars
+        const avatarsContainer = document.createElement('div');
+        avatarsContainer.className = 'seen-avatars';
+        
+        // Thêm tối đa 5 avatars
+        const maxAvatars = 5;
+        const avatarsToShow = seenUsers.slice(0, maxAvatars);
+        
+        avatarsToShow.forEach(seen => {
+            const avatar = document.createElement('img');
+            avatar.className = 'seen-avatar';
+            avatar.src = seen.avatarUrl;
+            avatar.alt = seen.displayName;
+            avatar.title = `${seen.displayName} đã xem`;
+            avatar.onerror = function() {
+                this.src = 'images/default_avatar.jpg';
+            };
+            avatarsContainer.appendChild(avatar);
+        });
+        
+        // Nếu có nhiều hơn 5 người, thêm indicator
+        if (seenUsers.length > maxAvatars) {
+            const moreIndicator = document.createElement('div');
+            moreIndicator.className = 'seen-avatar more-indicator';
+            moreIndicator.textContent = `+${seenUsers.length - maxAvatars}`;
+            moreIndicator.title = `${seenUsers.length - maxAvatars} người khác đã xem`;
+            avatarsContainer.appendChild(moreIndicator);
+        }
+        
+        // Ghép lại
+        seenContainer.appendChild(avatarsContainer);
+        
+        // Thêm vào cuối container
+        container.appendChild(seenContainer);
+        
+    } catch (error) {
+        console.error('Lỗi khi parse seen users data:', error);
     }
 }
 
@@ -511,6 +567,9 @@ async function sendMessage(chatId) {
             </div>
         </div>
     `;
+    
+    // Thêm status "Đang gửi..." cho tin nhắn tạm thời
+    tempMessageEl.setAttribute('data-message-status', 'sending');
     container.appendChild(tempMessageEl);
     requestAnimationFrame(() => {
         container.scrollTop = container.scrollHeight;
@@ -550,7 +609,7 @@ async function sendMessage(chatId) {
             messageEl.setAttribute('data-message-id', response.data.id);
             container.appendChild(messageEl);
             // Cập nhật seen status cho tin nhắn cuối cùng
-            setTimeout(updateSeenStatusForLastMessage, 0);
+            setTimeout(updateSeenStatusForLastMessage, 100);
             requestAnimationFrame(() => {
                 container.scrollTop = container.scrollHeight;
             });
