@@ -71,6 +71,8 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
                 messageEl.setAttribute('data-message-id', msg.id);
                 container.appendChild(messageEl);
             });
+            // Cập nhật seen status cho tin nhắn cuối cùng
+            setTimeout(updateSeenStatusForLastMessage, 0);
         } else {
             container.innerHTML = `<div class="empty-chat">Chưa có tin nhắn nào</div>`;
         }
@@ -96,6 +98,8 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
         const messageEl = renderMessage(message, userId);
         messageEl.setAttribute('data-message-id', message.id);
         container.appendChild(messageEl);
+        // Cập nhật seen status cho tin nhắn cuối cùng
+        setTimeout(updateSeenStatusForLastMessage, 0);
         requestAnimationFrame(() => {
             container.scrollTop = container.scrollHeight;
         });
@@ -139,8 +143,26 @@ function renderMessage(msg, userId) {
     const wrapper = document.createElement("div");
     wrapper.className = "message-wrapper " + (isUser ? "user" : "other");
 
+    // Kiểm tra tin nhắn đã được thu hồi
+    if (msg.recalled) {
+        wrapper.innerHTML = `
+            <div class="message-bubble">
+                <div class="message-content text-muted">[Tin nhắn đã được thu hồi]</div>
+            </div>
+        `;
+        return wrapper;
+    }
+
     const time = msg.timeAgo || (typeof ProfileController !== 'undefined' && ProfileController.formatTimeAgo ? ProfileController.formatTimeAgo(new Date(msg.createdAt)) : formatTimeAgo(msg.createdAt));
     let contentHtml = "";
+
+    // Xử lý reply message
+    let replyHtml = "";
+    if (msg.replyToId) {
+        replyHtml = `<div class="reply-message">
+            <i class="bi bi-reply-fill"></i> Trả lời tin nhắn
+        </div>`;
+    }
 
     switch (msg.messageType) {
         case "TEXT":
@@ -212,13 +234,40 @@ function renderMessage(msg, userId) {
         ? ""
         : `<div class="message-sender">${escapeHtml(senderName)}</div>`;
 
+    // Xử lý thông tin đã xem - sẽ được cập nhật sau khi append vào container
+    let seenInfoHtml = "";
+    if (msg.seenBy && msg.seenBy.length > 0) {
+        const currentUserId = localStorage.getItem("userId");
+        const seenAvatars = msg.seenBy.map(seen => {
+            const avatarUrl = seen.avatarUrl ? getAvatarUrl(seen.avatarUrl) : "images/default_avatar.jpg";
+            const isCurrentUser = seen.userId === currentUserId;
+            return {
+                avatarUrl: avatarUrl,
+                isCurrentUser: isCurrentUser,
+                displayName: seen.displayName || "Unknown"
+            };
+        });
+        // Tạo HTML cho avatars
+        const avatarsHtml = seenAvatars.map(seen => {
+            const userLabel = seen.isCurrentUser ? "bạn" : seen.displayName;
+            return `<img src="${seen.avatarUrl}" alt="${userLabel}" class="seen-avatar" title="${userLabel} đã xem" onerror="this.src='images/default_avatar.jpg';"/>`;
+        }).join("");
+        seenInfoHtml = `<div class="message-seen" style="display: none;"><div class="seen-avatars">${avatarsHtml}</div></div>`;
+    }
+
+    // Xử lý thông tin đã chỉnh sửa
+    let editedInfoHtml = "";
+    if (msg.edited) {
+        editedInfoHtml = `<div class="message-edited">(Đã chỉnh sửa)</div>`;
+    }
+
     const contextMenuHtml = `
         <div class="message-context-menu">
            <ul>
-             <li onclick="replyMessage('${msg.content}')"><i class="bi bi-reply-fill"></i> Trả lời
-             </li><li onclick="forwardMessage('${msg.id}')"><i class="bi bi-arrow-right-circle-fill"></i> Chuyển tiếp</li>
-             ${isUser ? `<li onclick="editMessage('${msg.id}', '${msg.content}')"><i class="bi bi-pencil-fill"></i> Sửa tin nhắn</li>` : ""}
-             ${isUser ? `<li onclick="dellMessageById(${msg.id})"><i class="bi bi-trash-fill"></i> Thu hồi</li>` : ""}
+             <li onclick="replyMessage('${msg.id}')"><i class="bi bi-reply-fill"></i> Trả lời</li>
+             <li onclick="forwardMessage('${msg.id}')"><i class="bi bi-arrow-right-circle-fill"></i> Chuyển tiếp</li>
+             ${isUser ? `<li onclick="editMessage('${msg.id}', '${escapeHtml(msg.content)}')"><i class="bi bi-pencil-fill"></i> Sửa tin nhắn</li>` : ""}
+             ${isUser ? `<li onclick="recallMessage('${msg.id}')"><i class="bi bi-trash-fill"></i> Thu hồi</li>` : ""}
            </ul>
         </div>
     `;
@@ -230,8 +279,13 @@ function renderMessage(msg, userId) {
         </div>
         <div class="message-bubble">
             ${senderInfoHtml}
+            ${replyHtml}
             <div class="message-content">${contentHtml}</div>
-            <div class="message-time">${time}</div>
+            <div class="message-time">
+                ${time}
+                ${editedInfoHtml}
+            </div>
+            ${seenInfoHtml}
             ${contextMenuHtml}
         </div>
     `;
@@ -248,6 +302,32 @@ function formatTimeAgo(dateString) {
     const diffMs = now - msgDate;
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     return diffDays > 0 ? `${diffDays} ngày trước` : "Vừa xong";
+}
+
+/**
+ * Cập nhật seen status cho tin nhắn cuối cùng
+ */
+function updateSeenStatusForLastMessage() {
+    const container = document.getElementById("chat-messages");
+    if (!container) return;
+    
+    const messages = Array.from(container.children);
+    if (messages.length === 0) return;
+    
+    // Ẩn tất cả seen status trước
+    messages.forEach(msg => {
+        const seenEl = msg.querySelector('.message-seen');
+        if (seenEl) {
+            seenEl.style.display = 'none';
+        }
+    });
+    
+    // Hiển thị seen status cho tin nhắn cuối cùng
+    const lastMessage = messages[messages.length - 1];
+    const seenEl = lastMessage.querySelector('.message-seen');
+    if (seenEl) {
+        seenEl.style.display = 'block';
+    }
 }
 
 /**
@@ -375,6 +455,7 @@ async function sendMessage(chatId) {
     const fileInput = document.getElementById("chat-file");
     const previewOverlay = document.querySelector(".file-preview-overlay");
     const replyId = input.getAttribute("data-reply-id");
+    const editId = input.getAttribute("data-edit-id");
     const content = input.value.trim();
     const files = fileInput.files;
 
@@ -440,6 +521,7 @@ async function sendMessage(chatId) {
     formData.append("senderId", userId);
     if (content) formData.append("content", content);
     if (replyId) formData.append("replyId", replyId);
+    if (editId) formData.append("messageId", editId);
 
     const hasFiles = files && files.length > 0;
     let messageType = "TEXT";
@@ -467,6 +549,8 @@ async function sendMessage(chatId) {
             const messageEl = renderMessage(response.data, userId);
             messageEl.setAttribute('data-message-id', response.data.id);
             container.appendChild(messageEl);
+            // Cập nhật seen status cho tin nhắn cuối cùng
+            setTimeout(updateSeenStatusForLastMessage, 0);
             requestAnimationFrame(() => {
                 container.scrollTop = container.scrollHeight;
             });
@@ -486,6 +570,7 @@ async function sendMessage(chatId) {
             // Reset input and preview
             input.value = "";
             input.removeAttribute("data-reply-id");
+            input.removeAttribute("data-edit-id");
             input.placeholder = "Nhập tin nhắn...";
             input.style.paddingTop = "12px";
             fileInput.value = "";
@@ -498,6 +583,7 @@ async function sendMessage(chatId) {
             alert("Gửi tin nhắn thất bại: " + (status?.message || "Không rõ lý do"));
             // Reset preview
             input.style.paddingTop = "12px";
+            input.removeAttribute("data-edit-id");
             fileInput.value = "";
             previewOverlay.innerHTML = '';
             previewOverlay.classList.remove('active');
@@ -509,6 +595,7 @@ async function sendMessage(chatId) {
         alert("Có lỗi xảy ra khi gửi tin nhắn.");
         // Reset preview
         input.style.paddingTop = "12px";
+        input.removeAttribute("data-edit-id");
         fileInput.value = "";
         previewOverlay.innerHTML = '';
         previewOverlay.classList.remove('active');
@@ -521,13 +608,22 @@ async function sendMessage(chatId) {
 function replyMessage(messageId) {
     const inputField = document.getElementById("chat-input");
     inputField.setAttribute("data-reply-id", messageId);
-    inputField.placeholder = `Trả lời tin nhắn ${messageId}...`;
+    inputField.placeholder = `Trả lời tin nhắn...`;
     inputField.focus();
 }
 
 function forwardMessage(messageId) {
     alert(`Chuyển tiếp tin nhắn ${messageId}`);
     // TODO: Add logic for forwarding message
+}
+
+function editMessage(messageId, content) {
+    const inputField = document.getElementById("chat-input");
+    inputField.value = content;
+    inputField.setAttribute("data-edit-id", messageId);
+    inputField.placeholder = "Chỉnh sửa tin nhắn...";
+    inputField.focus();
+    // TODO: Add logic for editing message
 }
 
 async function recallMessage(messageId) {
@@ -583,6 +679,15 @@ document.getElementById('profile-close').addEventListener('click', () => {
 });
 
 
+function escapeHtml(text) {
+    if (!text) return '';
+    return text.replace(/&/g, "&amp;")
+               .replace(/</g, "&lt;")
+               .replace(/>/g, "&gt;")
+               .replace(/"/g, "&quot;")
+               .replace(/'/g, "&#039;");
+}
+
 function escapeHTML(str) {
     if (!str) return '';
     return str.replace(/[&<>"']/g, tag => ({
@@ -592,8 +697,5 @@ function escapeHTML(str) {
         '"': '&quot;',
         "'": '&#39;'
     }[tag] || tag));
-
-
-
 }
 
