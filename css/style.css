@@ -3201,3 +3201,21 @@ body {
     }
 }
 
+.message-time {
+    display: inline;
+}
+
+.message-edited {
+    display: inline-block;
+    font-size: 11px;
+    color: #6b7280;
+    margin-left: 8px;
+    font-style: italic;
+    opacity: 0.8;
+    vertical-align: middle;
+}
+
+.message-wrapper.user .message-edited {
+    color: #bfdbfe;
+}
+

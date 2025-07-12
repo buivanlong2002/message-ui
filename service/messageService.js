@@ -42,13 +42,19 @@
         });
     },
 
-    editMessage: async (messageId, newContent, token) => {
+    editMessage: async (messageId, newContent, token, conversationId = null) => {
+        const requestBody = { messageId, newContent };
+        if (conversationId) {
+            requestBody.conversationId = conversationId;
+        }
+        
         return await fetchAPI("/messages/edit", {
             method: "POST",
             headers: {
                 Authorization: "Bearer " + token,
+                "Content-Type": "application/json"
             },
-            body: JSON.stringify({ messageId, newContent }),
+            body: JSON.stringify(requestBody),
         });
     }
 };
