@@ -3090,23 +3090,7 @@ body {
     gap: 8px;
 }
 
-.message-wrapper .message-bubble .message-content.text-muted::before {
-    content: '🗑️';
-    font-size: 14px;
-    opacity: 0.7;
-    animation: fadeInRecall 0.5s ease;
-}
-
-@keyframes fadeInRecall {
-    from {
-        opacity: 0;
-        transform: scale(0.8) rotate(-10deg);
-    }
-    to {
-        opacity: 0.7;
-        transform: scale(1) rotate(0deg);
-    }
-}
+/* Bỏ icon thùng rác */
 
 .message-wrapper .message-bubble .message-content.text-muted:hover {
     background: linear-gradient(135deg, rgba(156, 163, 175, 0.12) 0%, rgba(156, 163, 175, 0.16) 100%);
@@ -3118,6 +3102,22 @@ body {
 /* Hiệu ứng cho tin nhắn thu hồi khi mới xuất hiện */
 .message-wrapper[data-recalled="true"] .message-bubble {
     animation: recallAnimation 0.6s ease-out;
+}
+
+/* Đảm bảo tin nhắn thu hồi hiển thị đúng layout */
+.message-wrapper[data-recalled="true"] {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.message-wrapper[data-recalled="true"].user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.message-wrapper[data-recalled="true"].other {
+    align-self: flex-start;
 }
 
 @keyframes recallAnimation {
@@ -3142,10 +3142,7 @@ body {
     color: #ef4444;
 }
 
-.message-wrapper.user .message-bubble .message-content.text-muted::before {
-    content: '🗑️';
-    color: #ef4444;
-}
+/* Bỏ icon thùng rác cho user */
 
 .message-wrapper.user .message-bubble .message-content.text-muted:hover {
     background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.16) 100%);
@@ -3159,10 +3156,7 @@ body {
     color: #6b7280;
 }
 
-.message-wrapper.other .message-bubble .message-content.text-muted::before {
-    content: '🗑️';
-    color: #6b7280;
-}
+/* Bỏ icon thùng rác cho other */
 
 .message-wrapper.other .message-bubble .message-content.text-muted:hover {
     background: linear-gradient(135deg, rgba(107, 114, 128, 0.12) 0%, rgba(107, 114, 128, 0.16) 100%);
@@ -3316,8 +3310,15 @@ body {
         gap: 6px;
     }
     
-    .message-wrapper .message-bubble .message-content.text-muted::before {
-        font-size: 12px;
+    /* Bỏ icon thùng rác trên mobile */
+    
+    .message-wrapper[data-recalled="true"] {
+        gap: 8px;
+    }
+    
+    .message-wrapper[data-recalled="true"] .message-avatar {
+        width: 32px;
+        height: 32px;
     }
     
     @keyframes recallAnimation {
