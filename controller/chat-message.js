@@ -77,9 +77,26 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
 
         if (Array.isArray(messages) && messages.length > 0) {
             messages.forEach(msg => {
-                const messageEl = renderMessage(msg, userId);
-                messageEl.setAttribute('data-message-id', msg.id);
-                container.appendChild(messageEl);
+                let messageEl = document.querySelector(`.message-wrapper[data-message-id="${msg.id}"]`);
+                if (messageEl) {
+                    // Nếu đã có, cập nhật nội dung
+                    const messageContent = messageEl.querySelector('.message-content');
+                    if (messageContent) {
+                        messageContent.innerHTML = `<div class="message-text">${escapeHtml(msg.content)}</div>`;
+                    }
+                    // Thêm indicator "Đã chỉnh sửa" nếu cần
+                    if (msg.edited) {
+                        const messageTime = messageEl.querySelector('.message-time');
+                        if (messageTime && !messageTime.querySelector('.message-edited')) {
+                            messageTime.innerHTML += '<div class="message-edited">(Đã chỉnh sửa)</div>';
+                        }
+                    }
+                } else {
+                    // Nếu chưa có, render mới
+                    messageEl = renderMessage(msg, userId);
+                    messageEl.setAttribute('data-message-id', msg.id);
+                    container.appendChild(messageEl);
+                }
             });
             // Cập nhật seen status cho tin nhắn cuối cùng
             setTimeout(updateSeenStatusForLastMessage, 100);
@@ -103,7 +120,21 @@ function loadChat(chatId, element, name, avatarUrl, isGroup) {
 
         // Prevent duplicate messages
         const existingMessage = document.querySelector(`.message-wrapper[data-message-id="${message.id}"]`);
-        if (existingMessage) return;
+        if (existingMessage) {
+            // Nếu là tin nhắn đã chỉnh sửa, cập nhật nội dung và trạng thái
+            const messageContent = existingMessage.querySelector('.message-content');
+            if (messageContent) {
+                messageContent.innerHTML = `<div class="message-text">${escapeHtml(message.content)}</div>`;
+            }
+            // Thêm indicator "Đã chỉnh sửa" nếu cần
+            if (message.edited) {
+                const messageTime = existingMessage.querySelector('.message-time');
+                if (messageTime && !messageTime.querySelector('.message-edited')) {
+                    messageTime.innerHTML += '<div class="message-edited">(Đã chỉnh sửa)</div>';
+                }
+            }
+            return; // Không thêm mới nữa!
+        }
 
         const messageEl = renderMessage(message, userId);
         messageEl.setAttribute('data-message-id', message.id);
@@ -616,50 +647,103 @@ async function sendMessage(chatId) {
     formData.append("messageType", messageType);
 
     try {
-        const response = await MessageService.sendMessage(formData, token);
+        let response;
+        
+        // Kiểm tra xem có phải đang edit tin nhắn không
+        if (editId) {
+            // Gọi API edit message
+            response = await MessageService.editMessage(editId, content, token, chatId);
+            console.log('Đang edit tin nhắn:', editId, 'với nội dung:', content, 'trong conversation:', chatId);
+        } else {
+            // Gọi API send message
+            response = await MessageService.sendMessage(formData, token);
+        }
+        
         const status = response?.status;
 
         if (status?.code === "00" && status.success) {
-            // Remove temporary message
-            const tempEl = document.querySelector(`.message-wrapper[data-message-id="${tempMessageId}"]`);
-            if (tempEl) tempEl.remove();
-
-            // Add real message from server
-            const messageEl = renderMessage(response.data, userId);
-            messageEl.setAttribute('data-message-id', response.data.id);
-            container.appendChild(messageEl);
-            // Cập nhật seen status cho tin nhắn cuối cùng
-            setTimeout(updateSeenStatusForLastMessage, 100);
-            requestAnimationFrame(() => {
-                container.scrollTop = container.scrollHeight;
-            });
-
-            // Update chat list
-            const chatItem = document.querySelector(`.chat-item[data-chat-id="${chatId}"]`);
-            if (chatItem) {
-                const lastMessageEl = chatItem.querySelector(".chat-last-message");
-                if (lastMessageEl) {
-                    lastMessageEl.textContent = content || "[File]";
+            if (editId) {
+                // Cập nhật tin nhắn đã edit
+                const messageElement = document.querySelector(`.message-wrapper[data-message-id="${editId}"]`);
+                if (messageElement) {
+                    // Cập nhật nội dung tin nhắn
+                    const messageContent = messageElement.querySelector('.message-content');
+                    if (messageContent) {
+                        messageContent.innerHTML = `<div class="message-text">${escapeHtml(content)}</div>`;
+                    }
+                    
+                    // Thêm indicator "Đã chỉnh sửa"
+                    const messageTime = messageElement.querySelector('.message-time');
+                    if (messageTime && !messageTime.querySelector('.message-edited')) {
+                        messageTime.innerHTML += '<div class="message-edited">(Đã chỉnh sửa)</div>';
+                    }
                 }
-                chatItem.parentNode.prepend(chatItem);
-                const unreadBadge = chatItem.querySelector(".unread-count");
-                if (unreadBadge) unreadBadge.remove();
-            }
+                
+                // Reset input
+                input.value = "";
+                input.removeAttribute("data-edit-id");
+                input.placeholder = "Nhập tin nhắn...";
+            } else {
+                // Remove temporary message
+                const tempEl = document.querySelector(`.message-wrapper[data-message-id="${tempMessageId}"]`);
+                if (tempEl) tempEl.remove();
 
-            // Reset input and preview
-            input.value = "";
-            input.removeAttribute("data-reply-id");
-            input.removeAttribute("data-edit-id");
-            input.placeholder = "Nhập tin nhắn...";
-            input.style.paddingTop = "12px";
-            fileInput.value = "";
-            previewOverlay.innerHTML = '';
-            previewOverlay.classList.remove('active');
+                // Add real message from server
+                const messageEl = renderMessage(response.data, userId);
+                messageEl.setAttribute('data-message-id', response.data.id);
+                container.appendChild(messageEl);
+                // Cập nhật seen status cho tin nhắn cuối cùng
+                setTimeout(updateSeenStatusForLastMessage, 100);
+                requestAnimationFrame(() => {
+                    container.scrollTop = container.scrollHeight;
+                });
+
+                // Update chat list
+                const chatItem = document.querySelector(`.chat-item[data-chat-id="${chatId}"]`);
+                if (chatItem) {
+                    const lastMessageEl = chatItem.querySelector(".chat-last-message");
+                    if (lastMessageEl) {
+                        lastMessageEl.textContent = content || "[File]";
+                    }
+                    chatItem.parentNode.prepend(chatItem);
+                    const unreadBadge = chatItem.querySelector(".unread-count");
+                    if (unreadBadge) unreadBadge.remove();
+                }
+
+                // Reset input and preview
+                input.value = "";
+                input.removeAttribute("data-reply-id");
+                input.removeAttribute("data-edit-id");
+                input.placeholder = "Nhập tin nhắn...";
+                input.style.paddingTop = "12px";
+                fileInput.value = "";
+                previewOverlay.innerHTML = '';
+                previewOverlay.classList.remove('active');
+            }
         } else {
-            // Remove temporary message on failure
+            if (editId) {
+                alert("Chỉnh sửa tin nhắn thất bại: " + (status?.message || "Không rõ lý do"));
+            } else {
+                // Remove temporary message on failure
+                const tempEl = document.querySelector(`.message-wrapper[data-message-id="${tempMessageId}"]`);
+                if (tempEl) tempEl.remove();
+                alert("Gửi tin nhắn thất bại: " + (status?.message || "Không rõ lý do"));
+                // Reset preview
+                input.style.paddingTop = "12px";
+                input.removeAttribute("data-edit-id");
+                fileInput.value = "";
+                previewOverlay.innerHTML = '';
+                previewOverlay.classList.remove('active');
+            }
+        }
+    } catch (err) {
+        console.error("Lỗi khi gửi tin nhắn:", err);
+        if (editId) {
+            alert("Có lỗi xảy ra khi chỉnh sửa tin nhắn.");
+        } else {
             const tempEl = document.querySelector(`.message-wrapper[data-message-id="${tempMessageId}"]`);
             if (tempEl) tempEl.remove();
-            alert("Gửi tin nhắn thất bại: " + (status?.message || "Không rõ lý do"));
+            alert("Có lỗi xảy ra khi gửi tin nhắn.");
             // Reset preview
             input.style.paddingTop = "12px";
             input.removeAttribute("data-edit-id");
@@ -667,17 +751,6 @@ async function sendMessage(chatId) {
             previewOverlay.innerHTML = '';
             previewOverlay.classList.remove('active');
         }
-    } catch (err) {
-        console.error("Lỗi khi gửi tin nhắn:", err);
-        const tempEl = document.querySelector(`.message-wrapper[data-message-id="${tempMessageId}"]`);
-        if (tempEl) tempEl.remove();
-        alert("Có lỗi xảy ra khi gửi tin nhắn.");
-        // Reset preview
-        input.style.paddingTop = "12px";
-        input.removeAttribute("data-edit-id");
-        fileInput.value = "";
-        previewOverlay.innerHTML = '';
-        previewOverlay.classList.remove('active');
     }
 }
 
@@ -702,7 +775,6 @@ function editMessage(messageId, content) {
     inputField.setAttribute("data-edit-id", messageId);
     inputField.placeholder = "Chỉnh sửa tin nhắn...";
     inputField.focus();
-    // TODO: Add logic for editing message
 }
 
 async function recallMessage(messageId) {
