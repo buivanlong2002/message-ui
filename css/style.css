@@ -921,14 +921,14 @@ body {
     background: transparent;
     border: none;
     font-size: 24px;
-    color: #1e293b;
+    color: #6b7280;
     cursor: pointer;
     transition: color 0.3s ease, transform 0.3s ease;
 }
 
 .menu-close:hover {
-    color: #105085;
-    transform: rotate(90deg);
+    color: #1e293b;
+    background: rgba(209, 213, 219, 0.3);
 }
 
 /* === Nội dung menu section === */
@@ -1022,14 +1022,14 @@ body {
     background: transparent;
     border: none;
     font-size: 24px;
-    color: #1e293b;
+    color: #6b7280;
     cursor: pointer;
     transition: color 0.3s ease, transform 0.3s ease;
 }
 
 .profile-close:hover {
-    color: #105085;
-    transform: rotate(90deg);
+    color: #1e293b;
+    background: rgba(209, 213, 219, 0.3);
 }
 
 .profile-content h2 {
@@ -3078,7 +3078,7 @@ body {
     padding: 12px 16px;
     background: linear-gradient(135deg, rgba(156, 163, 175, 0.08) 0%, rgba(156, 163, 175, 0.12) 100%);
     border-radius: 12px;
-    border: 1px solid rgba(156, 163, 175, 0.2);
+    border: none;
     margin: 6px 0;
     position: relative;
     backdrop-filter: blur(4px);
@@ -3088,6 +3088,38 @@ body {
     align-items: center;
     justify-content: center;
     gap: 8px;
+    min-height: 20px;
+}
+
+.message-wrapper.user .message-bubble .message-content.text-muted {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.12) 100%);
+    color: #ef4444;
+    border: none;
+}
+
+.message-wrapper.other .message-bubble .message-content.text-muted {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.08) 0%, rgba(107, 114, 128, 0.12) 100%);
+    color: #6b7280;
+    border: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    .message-wrapper .message-bubble .message-content.text-muted {
+        background: linear-gradient(135deg, rgba(55, 65, 81, 0.3) 0%, rgba(75, 85, 99, 0.4) 100%);
+        color: #9ca3af;
+        backdrop-filter: blur(8px);
+        border: none;
+    }
+    .message-wrapper.user .message-bubble .message-content.text-muted {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.25) 100%);
+        color: #fca5a5;
+        border: none;
+    }
+    .message-wrapper.other .message-bubble .message-content.text-muted {
+        background: linear-gradient(135deg, rgba(75, 85, 99, 0.3) 0%, rgba(107, 114, 128, 0.4) 100%);
+        color: #9ca3af;
+        border: none;
+    }
 }
 
 /* Bỏ icon thùng rác */
@@ -3120,6 +3152,13 @@ body {
     align-self: flex-start;
 }
 
+/* Đảm bảo message bubble của tin nhắn thu hồi có kích thước phù hợp */
+.message-wrapper[data-recalled="true"] .message-bubble {
+    min-width: 120px;
+    max-width: 300px;
+    padding: 8px 12px;
+}
+
 @keyframes recallAnimation {
     0% {
         opacity: 0;
@@ -3138,8 +3177,8 @@ body {
 /* Style đặc biệt cho tin nhắn thu hồi của user */
 .message-wrapper.user .message-bubble .message-content.text-muted {
     background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.12) 100%);
-    border-color: rgba(239, 68, 68, 0.2);
     color: #ef4444;
+    border: none;
 }
 
 /* Bỏ icon thùng rác cho user */
@@ -3152,8 +3191,8 @@ body {
 /* Style cho tin nhắn thu hồi của người khác */
 .message-wrapper.other .message-bubble .message-content.text-muted {
     background: linear-gradient(135deg, rgba(107, 114, 128, 0.08) 0%, rgba(107, 114, 128, 0.12) 100%);
-    border-color: rgba(107, 114, 128, 0.2);
     color: #6b7280;
+    border: none;
 }
 
 /* Bỏ icon thùng rác cho other */
@@ -3208,18 +3247,19 @@ body {
         border-color: rgba(75, 85, 99, 0.4);
         color: #9ca3af;
         backdrop-filter: blur(8px);
+        border: none;
     }
     
     .message-wrapper.user .message-bubble .message-content.text-muted {
         background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.25) 100%);
-        border-color: rgba(239, 68, 68, 0.3);
         color: #fca5a5;
+        border: none;
     }
     
     .message-wrapper.other .message-bubble .message-content.text-muted {
         background: linear-gradient(135deg, rgba(75, 85, 99, 0.3) 0%, rgba(107, 114, 128, 0.4) 100%);
-        border-color: rgba(107, 114, 128, 0.4);
         color: #9ca3af;
+        border: none;
     }
 }
 
@@ -3319,6 +3359,12 @@ body {
     .message-wrapper[data-recalled="true"] .message-avatar {
         width: 32px;
         height: 32px;
+    }
+    
+    .message-wrapper[data-recalled="true"] .message-bubble {
+        min-width: 100px;
+        max-width: 250px;
+        padding: 6px 10px;
     }
     
     @keyframes recallAnimation {
