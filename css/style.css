@@ -2913,6 +2913,86 @@ body {
     border-color: rgba(16, 80, 133, 0.2);
 }
 
+/* === Facebook-style seen status container === */
+.seen-status-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    margin-top: 5px;
+    margin-bottom: 8px;
+    animation: fadeInSeen 0.3s ease;
+}
+
+/* Hiển thị bên trái (khi tin nhắn cuối là của người khác) */
+.seen-status-left {
+    justify-content: flex-start;
+    margin-left: 50px; /* Căn với avatar của tin nhắn */
+}
+
+/* Hiển thị bên phải (khi tin nhắn cuối là của user) */
+.seen-status-right {
+    justify-content: flex-end;
+    margin-right: 50px; /* Căn với avatar của tin nhắn */
+}
+
+@keyframes fadeInSeen {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+
+.seen-avatars {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.seen-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ffffff;
+    transition: transform 0.2s ease, z-index 0.2s ease;
+    position: relative;
+}
+
+.seen-avatar:hover {
+    transform: scale(1.3);
+    z-index: 10;
+}
+
+.seen-avatar.more-indicator {
+    background: linear-gradient(135deg, #105085, #1a7cb3);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    border: 2px solid #ffffff;
+}
+
+/* === Dark mode cho seen status container === */
+@media (prefers-color-scheme: dark) {
+    .seen-avatar {
+        border-color: rgba(75, 85, 99, 0.8);
+    }
+    
+    .seen-avatar.more-indicator {
+        background: linear-gradient(135deg, #1a7cb3, #105085);
+        border-color: rgba(75, 85, 99, 0.8);
+    }
+}
+
 /* === Seen avatars === */
 .seen-avatars {
     display: flex;
@@ -3047,6 +3127,22 @@ body {
         font-size: 10px;
         margin-left: 6px;
     }
+    
+    .seen-status-container {
+        padding: 6px 12px;
+        gap: 6px;
+    }
+    
+
+    
+    .seen-avatar {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .seen-avatar.more-indicator {
+        font-size: 9px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -3085,4 +3181,23 @@ body {
         padding: 6px 8px;
         font-size: 12px;
     }
+    
+    .seen-status-container {
+        padding: 4px 8px;
+        gap: 4px;
+        margin-top: 6px;
+        margin-bottom: 6px;
+    }
+    
+
+    
+    .seen-avatar {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .seen-avatar.more-indicator {
+        font-size: 8px;
+    }
 }
+
