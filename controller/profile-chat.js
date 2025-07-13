@@ -38,7 +38,6 @@ function goToProfile(name ,isGroup, avatarUrl, groupId, isCreator) {
                     <li><i class="bi bi-clock-history"></i> Danh sách nhắc hẹn</li>
                     <li><i class="bi bi-journal-text"></i> Ghi chú, ghim, bình chọn</li>
                     <li onclick="createReminder()"><i class="bi bi-bell-fill"></i> Tạo nhắc nhở</li>
-                    <li onclick="searchMessages()"><i class="bi bi-search"></i> Tìm tin nhắn</li>
                 </ul>
             </div>
 
@@ -129,7 +128,6 @@ function goToProfile(name ,isGroup, avatarUrl, groupId, isCreator) {
                     <li><i class="bi bi-clock-history"></i> Danh sách nhắc hẹn</li>
                     <li><i class="bi bi-journal-text"></i> Ghi chú, ghim, bình chọn</li>
                     <li onclick="createReminder()"><i class="bi bi-bell-fill"></i> Tạo nhắc nhở</li>
-                    <li onclick="searchMessages()"><i class="bi bi-search"></i> Tìm tin nhắn</li>
                 </ul>
             </div>
 
