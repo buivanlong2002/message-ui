@@ -100,6 +100,14 @@ function goToProfile(name ,isGroup, avatarUrl, groupId, isCreator) {
         const mediaGrid = profileDetails.querySelector('.media-grid');
         // 2. Gọi hàm tải ảnh/video với đầy đủ 2 tham số
         loadConversationAttachments(groupId, mediaGrid);
+        
+        // 3. Gán sự kiện cho nút "Xem tất cả"
+        const viewAllBtn = profileDetails.querySelector('.view-all');
+        if (viewAllBtn) {
+            viewAllBtn.onclick = () => {
+                showAllMediaModal(groupId);
+            };
+        }
 
     } else {
         // === Giao diện cá nhân (1-1) ===
@@ -150,6 +158,14 @@ function goToProfile(name ,isGroup, avatarUrl, groupId, isCreator) {
         const mediaGrid = profileDetails.querySelector('.media-grid');
         // 2. Gọi hàm tải ảnh/video với đầy đủ 2 tham số
         loadConversationAttachments(window.currentChatId, mediaGrid);
+        
+        // 3. Gán sự kiện cho nút "Xem tất cả"
+        const viewAllBtn = profileDetails.querySelector('.view-all');
+        if (viewAllBtn) {
+            viewAllBtn.onclick = () => {
+                showAllMediaModal(window.currentChatId);
+            };
+        }
 
         // Gán sự kiện cho các nút chức năng
         const blockBtn = document.getElementById('block-user-btn');
@@ -1037,4 +1053,309 @@ function showWelcomeEmptyChat() {
     const welcome = document.getElementById('welcome-empty-chat');
     if (welcome) welcome.style.display = 'flex';
 }
+
+// === HÀM XEM TẤT CẢ MEDIA ===
+async function showAllMediaModal(conversationId) {
+    try {
+        const token = localStorage.getItem('token');
+        
+        // Hiển thị loading
+        const overlay = createMediaModalOverlay();
+        document.body.appendChild(overlay);
+        
+        // Lấy tất cả media từ conversation
+        const allMedia = await getAllConversationMedia(conversationId, token);
+        
+        // Cập nhật nội dung modal
+        updateMediaModalContent(overlay, allMedia, conversationId);
+        
+    } catch (error) {
+        console.error('Lỗi khi tải media:', error);
+        alert('Lỗi khi tải danh sách media!');
+    }
+}
+
+async function getAllConversationMedia(conversationId, token) {
+    const allMedia = [];
+    
+    try {
+        // 1. Thử lấy từ API conversation attachments
+        const res = await fetch(`${API_CONFIG.BASE_URL}/conversation/${conversationId}`, {
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        
+        if (data.status?.success && Array.isArray(data.data) && data.data.length > 0) {
+            data.data.forEach(att => {
+                allMedia.push({
+                    fileUrl: `https://cms-service.up.railway.app${att.url}`,
+                    fileName: att.name || 'File đính kèm',
+                    type: att.type || ''
+                });
+            });
+        }
+        
+        // 2. Nếu không có, lấy từ messages
+        if (allMedia.length === 0) {
+            const msgRes = await fetch(`${API_CONFIG.BASE_URL}/messages/get-by-conversation?conversationId=${conversationId}&page=0&size=100`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                }
+            });
+            const msgData = await msgRes.json();
+            
+            if (msgData.status?.success && Array.isArray(msgData.data)) {
+                msgData.data.forEach(msg => {
+                    if (msg.attachments && Array.isArray(msg.attachments)) {
+                        msg.attachments.forEach(att => {
+                            allMedia.push({
+                                fileUrl: `https://cms-service.up.railway.app${att.url}`,
+                                fileName: att.name || 'File đính kèm',
+                                type: att.type || ''
+                            });
+                        });
+                    }
+                });
+            }
+        }
+        
+    } catch (error) {
+        console.error('Lỗi khi lấy media:', error);
+    }
+    
+    return allMedia;
+}
+
+function createMediaModalOverlay() {
+    const overlay = document.createElement('div');
+    overlay.id = 'media-modal-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.8);
+        z-index: 3000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    `;
+    
+    overlay.innerHTML = `
+        <div class="media-modal-content">
+            <div class="media-modal-header">
+                <h3>Media của cuộc trò chuyện</h3>
+                <button class="media-modal-close">&times;</button>
+            </div>
+            <div class="media-modal-body">
+                <div style="text-align: center; padding: 40px; color: #888;">
+                    <div class="loading"></div>
+                    <p>Đang tải media...</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    return overlay;
+}
+
+function updateMediaModalContent(overlay, allMedia, conversationId) {
+    console.log('allMedia:', allMedia);
+    
+    // Phân loại media
+    const images = allMedia.filter(item => {
+        const type = item.type || '';
+        const fileUrl = item.fileUrl || '';
+        return type.startsWith('image') || fileUrl.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i);
+    });
+
+    const videos = allMedia.filter(item => {
+        const type = item.type || '';
+        const fileUrl = item.fileUrl || '';
+        return type.startsWith('video') || fileUrl.match(/\.(mp4|webm|ogg|avi|mov|mkv)$/i);
+    });
+
+    const files = allMedia.filter(item => {
+        const type = item.type || '';
+        const fileUrl = item.fileUrl || '';
+        return !type.startsWith('image') && !type.startsWith('video') &&
+               !fileUrl.match(/\.(jpg|jpeg|png|gif|bmp|webp|mp4|webm|ogg|avi|mov|mkv)$/i);
+    });
+
+    overlay.innerHTML = `
+        <div class="media-modal-content">
+            <div class="media-modal-header">
+                <h3>Media của cuộc trò chuyện</h3>
+                <button class="media-modal-close">&times;</button>
+            </div>
+            <div class="media-modal-tabs">
+                <button class="media-tab active" data-tab="all">
+                    <i class="bi bi-collection"></i> Tất cả (${allMedia.length})
+                </button>
+                <button class="media-tab" data-tab="images">
+                    <i class="bi bi-image"></i> Ảnh (${images.length})
+                </button>
+                <button class="media-tab" data-tab="videos">
+                    <i class="bi bi-camera-video"></i> Video (${videos.length})
+                </button>
+                <button class="media-tab" data-tab="files">
+                    <i class="bi bi-file-earmark"></i> File (${files.length})
+                </button>
+            </div>
+            <div class="media-modal-body">
+                <div class="media-tab-content active" data-tab="all">
+                    ${renderMediaGrid(allMedia)}
+                </div>
+                <div class="media-tab-content" data-tab="images">
+                    ${renderMediaGrid(images)}
+                </div>
+                <div class="media-tab-content" data-tab="videos">
+                    ${renderMediaGrid(videos)}
+                </div>
+                <div class="media-tab-content" data-tab="files">
+                    ${renderMediaGrid(files)}
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Đóng modal
+    overlay.querySelector('.media-modal-close').onclick = () => overlay.remove();
+    overlay.onclick = (e) => {
+        if (e.target === overlay) overlay.remove();
+    };
+
+    // Chuyển tab
+    overlay.querySelectorAll('.media-tab').forEach(tab => {
+        tab.onclick = () => {
+            const tabName = tab.dataset.tab;
+            overlay.querySelectorAll('.media-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            overlay.querySelectorAll('.media-tab-content').forEach(content => {
+                content.classList.remove('active');
+                if (content.dataset.tab === tabName) {
+                    content.classList.add('active');
+                }
+            });
+        };
+    });
+
+    // Đóng bằng phím ESC
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            overlay.remove();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+}
+
+function renderMediaGrid(mediaItems) {
+    if (mediaItems.length === 0) {
+        return '<div class="no-media">Không có media nào</div>';
+    }
+    return `
+        <div class="media-modal-grid">
+            ${mediaItems.map(item => {
+                const type = item.type || '';
+                const fileUrl = item.fileUrl || '';
+                const fileName = item.fileName;
+                if (type.startsWith('image') || fileUrl.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i)) {
+                    return `
+                        <div class="media-item image-item" onclick="previewMedia('${fileUrl}', 'image')">
+                            <img src="${fileUrl}" alt="${fileName}" />
+                            <div class="media-item-overlay">
+                                <i class="bi bi-eye"></i>
+                            </div>
+                        </div>
+                    `;
+                } else if (type.startsWith('video') || fileUrl.match(/\.(mp4|webm|ogg|avi|mov|mkv)$/i)) {
+                    return `
+                        <div class="media-item video-item" onclick="previewMedia('${fileUrl}', 'video')">
+                            <video src="${fileUrl}" muted></video>
+                            <div class="media-item-overlay">
+                                <i class="bi bi-play-circle"></i>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="media-item file-item" onclick="downloadFile('${fileUrl}', '${fileName}')">
+                            <div class="file-icon">
+                                <i class="bi bi-file-earmark-text"></i>
+                            </div>
+                            <div class="file-name">${fileName}</div>
+                            <div class="media-item-overlay">
+                                <i class="bi bi-download"></i>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('')}
+        </div>
+    `;
+}
+
+function previewMedia(fileUrl, type) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.9);
+        z-index: 4000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    `;
+    
+    let content = '';
+    if (type === 'image') {
+        content = `<img src="${fileUrl}" style="max-width: 90vw; max-height: 90vh; object-fit: contain;" />`;
+    } else if (type === 'video') {
+        content = `<video src="${fileUrl}" controls style="max-width: 90vw; max-height: 90vh;" autoplay></video>`;
+    }
+    
+    overlay.innerHTML = `
+        <div style="position: relative;">
+            <button onclick="this.parentElement.parentElement.remove()" 
+                    style="position: absolute; top: -40px; right: 0; background: none; border: none; color: white; font-size: 24px; cursor: pointer;">&times;</button>
+            ${content}
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // Đóng bằng phím ESC
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            overlay.remove();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+}
+
+function downloadFile(fileUrl, fileName) {
+    const link = document.createElement('a');
+    link.href = fileUrl;
+    link.download = fileName;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Đảm bảo các hàm global
+window.showAllMediaModal = showAllMediaModal;
+window.previewMedia = previewMedia;
+window.downloadFile = downloadFile;
 
