@@ -21,8 +21,7 @@ function goToProfile(name ,isGroup, avatarUrl, groupId, isCreator) {
                     <button onclick="searchMessages()"><i class="bi bi-search"></i><br>Tìm tin nhắn</button>
                     <button onclick="addGroupMember()"><i class="bi bi-person-plus"></i><br>Thêm thành viên</button>
                     ${isCreator ? `<button id='change-group-avatar-btn'><i class='bi bi-camera'></i><br>Đổi ảnh nhóm</button>
-                    <button id='rename-group-btn'><i class='bi bi-pencil'></i><br>Đổi tên nhóm</button>
-                    <button id='remove-member-btn'><i class='bi bi-person-dash'></i><br>Xóa thành viên</button>` : ''}
+                    <button id='rename-group-btn'><i class='bi bi-pencil'></i><br>Đổi tên nhóm</button>` : ''}
                 </div>
                 <input type="file" id="group-avatar-file" accept="image/*" style="display:none;" />
             </div>
@@ -89,8 +88,6 @@ function goToProfile(name ,isGroup, avatarUrl, groupId, isCreator) {
             };
             const renameBtn = document.getElementById('rename-group-btn');
             if (renameBtn) renameBtn.onclick = () => alert('Chức năng đang phát triển!');
-            const removeBtn = document.getElementById('remove-member-btn');
-            if (removeBtn) removeBtn.onclick = () => alert('Chức năng xóa thành viên đang phát triển!');
         }
 
         loadGroupMembers(groupId, isCreator);
@@ -733,7 +730,8 @@ function addGroupMember() {
     };
 }
 
-async function loadGroupMembers(groupId, isCreator = false) {
+// Sửa lại hàm loadGroupMembers để nhận thêm creatorId
+async function loadGroupMembers(groupId, isCreator = false, creatorId = null) {
     const token = localStorage.getItem('token');
     const section = document.getElementById('group-members-section');
     const list = document.getElementById('group-member-list');
@@ -753,33 +751,48 @@ async function loadGroupMembers(groupId, isCreator = false) {
 
         const data = await res.json();
 
-        if (data.status && data.status.success && Array.isArray(data.data)) {
-            countSpan.textContent = data.data.length;
-            if (data.data.length === 0) {
+        // Nếu API trả về data.users và data.creatorId
+        let users = data.data;
+        if (data.data && data.data.users && data.data.creatorId) {
+            users = data.data.users;
+            creatorId = data.data.creatorId;
+        }
+
+        if (data.status && data.status.success && Array.isArray(users)) {
+            countSpan.textContent = users.length;
+            if (users.length === 0) {
                 list.innerHTML = '<li>Chưa có thành viên nào.</li>';
             } else {
-                // An toàn khi parse user từ localStorage
                 let currentUser = {};
                 try {
                     currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+                    if (!currentUser.id && localStorage.getItem('userId')) {
+                        currentUser.id = localStorage.getItem('userId');
+                    }
                 } catch (e) {
-                    console.warn("Không parse được user từ localStorage:", e);
+                    if (localStorage.getItem('userId')) {
+                        currentUser.id = localStorage.getItem('userId');
+                    }
                 }
 
-                list.innerHTML = data.data.map(u => {
-                    let removeBtn = '';
-                    if (isCreator && currentUser?.id && u.id !== currentUser.id) {
-                        removeBtn = `<button class="remove-member-btn" data-user-id="${u.id}" style="margin-left:8px;padding:2px 8px;background:#dc2626;color:#fff;border:none;border-radius:4px;cursor:pointer;">Xóa</button>`;
+                list.innerHTML = users.map(u => {
+                    let actionBtn = '';
+                    // Nút Xóa: chỉ trưởng nhóm mới thấy, không render cho creator
+                    if (isCreator && u.id !== creatorId) {
+                        actionBtn = `<button class="remove-member-btn" data-user-id="${u.id}" data-user-name="${u.displayName || u.name || 'Không rõ tên'}" style="margin-left:8px;padding:4px 16px;background:#dc2626;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;min-width:48px;box-shadow:0 1px 4px #b6c6e3;transition:background 0.2s;" onmouseover="this.style.background='#b91c1c'\" onmouseout="this.style.background='#dc2626'">Xóa</button>`;
                     }
-
+                    // Nhãn Leader cạnh tên creator cho tất cả mọi người
+                    const leaderLabel = u.id === creatorId ? `<span style=\"margin-left:8px;padding:2px 10px;background:linear-gradient(90deg,#22c55e,#16a34a);color:#fff;border-radius:6px;font-size:12px;font-weight:600;display:inline-block;box-shadow:0 1px 4px #b6c6e3;letter-spacing:1px;vertical-align:middle;min-width:40px;text-align:center;\">Leader</span>` : '';
                     return `
-                        <li style='display:flex;align-items:center;gap:10px;margin-bottom:8px;'>
-                            <img src="${getAvatarUrl(u.avatarUrl)}" class="avatar-sm"
-                                 style="width:36px;height:36px;border-radius:50%;object-fit:cover;box-shadow:0 1px 4px #b6c6e3;" />
-                            <span class='member-displayname' style="font-size:16px;font-weight:500;">
-                                ${u.displayName || u.name || 'Không rõ tên'}
-                            </span>
-                            ${removeBtn}
+                        <li style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;padding:8px 12px;border-radius:8px;background:#f8fafc;border:1px solid #e5e7eb;list-style:none;">
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <img src="${getAvatarUrl(u.avatarUrl)}" class="avatar-sm"
+                                     style="width:36px;height:36px;border-radius:50%;object-fit:cover;box-shadow:0 1px 4px #b6c6e3;">
+                                <span class='member-displayname' style="font-size:16px;font-weight:500;color:#374151;display:flex;align-items:center;">
+                                    ${u.displayName || u.name || 'Không rõ tên'} ${leaderLabel}
+                                </span>
+                            </div>
+                            ${actionBtn}
                         </li>
                     `;
                 }).join('');
@@ -789,9 +802,16 @@ async function loadGroupMembers(groupId, isCreator = false) {
                     list.querySelectorAll('.remove-member-btn').forEach(btn => {
                         btn.onclick = async function () {
                             const userId = btn.getAttribute('data-user-id');
-                            if (!confirm('Bạn có chắc muốn xóa thành viên này khỏi nhóm?')) return;
+                            const userName = btn.getAttribute('data-user-name');
+                            
+                            if (!confirm(`Bạn có chắc muốn xóa "${userName}" khỏi nhóm?`)) return;
 
                             try {
+                                // Hiển thị loading trên nút
+                                btn.innerHTML = 'Đang xóa...';
+                                btn.disabled = true;
+                                btn.style.background = '#9ca3af';
+                                
                                 const removeRes = await fetch(`${API_CONFIG.BASE_URL}/conversation-members/remove`, {
                                     method: 'POST',
                                     headers: {
@@ -803,13 +823,22 @@ async function loadGroupMembers(groupId, isCreator = false) {
 
                                 const removeData = await removeRes.json();
                                 if (removeData.status && removeData.status.success) {
-                                    alert('Đã xóa thành viên thành công!');
-                                    loadGroupMembers(groupId, isCreator); // Reload lại danh sách
+                                    showToast(`Đã xóa "${userName}" khỏi nhóm thành công!`, 'success');
+                                    loadGroupMembers(groupId, isCreator, creatorId); // Reload lại danh sách
                                 } else {
-                                    alert(removeData.status?.displayMessage || 'Xóa thành viên thất bại!');
+                                    showToast(removeData.status?.displayMessage || 'Xóa thành viên thất bại!', 'error');
+                                    // Khôi phục nút
+                                    btn.innerHTML = 'Xóa';
+                                    btn.disabled = false;
+                                    btn.style.background = '#dc2626';
                                 }
                             } catch (err) {
-                                alert('Lỗi khi xóa thành viên!');
+                                console.error('Lỗi khi xóa thành viên:', err);
+                                showToast('Lỗi khi xóa thành viên!', 'error');
+                                // Khôi phục nút
+                                btn.innerHTML = 'Xóa';
+                                btn.disabled = false;
+                                btn.style.background = '#dc2626';
                             }
                         };
                     });
@@ -1358,4 +1387,27 @@ function downloadFile(fileUrl, fileName) {
 window.showAllMediaModal = showAllMediaModal;
 window.previewMedia = previewMedia;
 window.downloadFile = downloadFile;
+
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.innerText = message;
+    toast.style.position = 'fixed';
+    toast.style.top = '24px';
+    toast.style.right = '24px';
+    toast.style.zIndex = 9999;
+    toast.style.background = type === 'success' ? 'linear-gradient(90deg,#059669,#10b981)' : 'linear-gradient(90deg,#dc2626,#f87171)';
+    toast.style.color = '#fff';
+    toast.style.padding = '12px 24px';
+    toast.style.borderRadius = '8px';
+    toast.style.fontWeight = 'bold';
+    toast.style.boxShadow = '0 2px 8px rgba(16,80,133,0.10)';
+    toast.style.fontSize = '15px';
+    toast.style.opacity = '0.95';
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.style.transition = 'opacity 0.5s';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 500);
+    }, 2000);
+}
 
