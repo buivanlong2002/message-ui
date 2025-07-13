@@ -108,31 +108,57 @@ function handleRegister() {
 
   const phoneRegex = /^\+?[0-9]{7,15}$/;
   if (phone && !phoneRegex.test(phone)) {
-    showMessage('Số điện thoại không hợp lệ!', 'error');
+    showToastMessage('Số điện thoại không hợp lệ!', 'error');
     return;
   }
 
   const data = { displayName, email, phoneNumber: phone, avatarUrl, password };
 
-          fetch('https://cms-service.up.railway.app/api/auth/register', {
+  // Disable button và hiển thị loading
+  const registerBtn = document.querySelector('#register-container .btn-primary');
+  const originalText = registerBtn.textContent;
+  registerBtn.textContent = 'Đang đăng ký...';
+  registerBtn.disabled = true;
+
+  fetch('https://cms-service.up.railway.app/api/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   })
-      .then(res => res.json().then(json => ({ status: res.status, body: json })))
-      .then(({ status, body }) => {
-        if (status === 200 && body.success) {
+    .then(res => res.json().then(json => ({ status: res.status, body: json })))
+    .then(({ status, body }) => {
+      console.log('Register response:', { status, body }); // Debug log
+      
+      // Kiểm tra nhiều trường hợp thành công
+      if (status === 200 && (body.success || body.status?.code === '00' || body.message?.includes('success'))) {
+        // Hiển thị thông báo thành công
+        showToastMessage('Đăng ký thành công!', 'success');
+        
+        // Chuyển về trang đăng nhập ngay lập tức
+        setTimeout(() => {
           switchForm('login-container');
+          // Reset form đăng ký
+          document.getElementById('reg-username').value = '';
+          document.getElementById('reg-email').value = '';
+          document.getElementById('reg-phone').value = '';
+          document.getElementById('reg-avatar').value = '';
+          document.getElementById('reg-password').value = '';
+        }, 1000); // Giảm thời gian chờ xuống 1 giây
       } else {
-          showMessage(`${body.status?.displayMessage || 'Đăng ký thất bại'}`, 'error');
-        }
-      })
-      .catch(() => showMessage('Lỗi kết nối máy chủ!', 'error'));
-
-  function showMessage(msg, type) {
-    messageBox.innerText = msg;
-    messageBox.className = type === 'success' ? 'msg-success' : 'msg-error';
-  }
+        // Hiển thị lỗi từ server hoặc thông báo mặc định
+        const errorMessage = body.status?.displayMessage || body.message || 'Đăng ký thất bại';
+        showToastMessage(errorMessage, 'error');
+      }
+    })
+    .catch((error) => {
+      console.error('Register error:', error); // Debug log
+      showToastMessage('Lỗi kết nối máy chủ!', 'error');
+    })
+    .finally(() => {
+      // Khôi phục button
+      registerBtn.textContent = originalText;
+      registerBtn.disabled = false;
+    });
 }
 
 // === QUÊN MẬT KHẨU ===
@@ -145,10 +171,15 @@ async function handleForgotPassword() {
   messageDiv.className = 'message';
 
   if (!email) {
-    messageDiv.textContent = 'Vui lòng nhập email.';
-    messageDiv.classList.add('error');
+    showToastMessage('Vui lòng nhập email.', 'error');
     return;
   }
+
+  // Disable button và hiển thị loading
+  const forgotBtn = document.querySelector('#forgot-container .btn-primary');
+  const originalText = forgotBtn.textContent;
+  forgotBtn.textContent = 'Đang gửi...';
+  forgotBtn.disabled = true;
 
   try {
     const response = await fetchAPI('/auth/forgot-password', {
@@ -157,16 +188,17 @@ async function handleForgotPassword() {
     });
 
     if (response.status?.code === '00') {
-      messageDiv.textContent = 'Nếu email tồn tại, hướng dẫn đã được gửi đến hộp thư.';
-      messageDiv.classList.add('success');
+      showToastMessage('Nếu email tồn tại, hướng dẫn đã được gửi đến hộp thư.', 'success');
       setTimeout(() => switchForm('login-container'), 2500);
     } else {
-      messageDiv.textContent = response.status?.displayMessage || 'Có lỗi xảy ra.';
-      messageDiv.classList.add('error');
+      showToastMessage(response.status?.displayMessage || 'Có lỗi xảy ra.', 'error');
     }
   } catch (error) {
-    messageDiv.textContent = 'Không thể gửi yêu cầu. Vui lòng thử lại sau.';
-    messageDiv.classList.add('error');
+    showToastMessage('Không thể gửi yêu cầu. Vui lòng thử lại sau.', 'error');
+  } finally {
+    // Khôi phục button
+    forgotBtn.textContent = originalText;
+    forgotBtn.disabled = false;
   }
 }
 
@@ -183,4 +215,44 @@ function togglePasswordVisibility(inputId) {
     icon.classList.remove('fa-eye-slash');
     icon.classList.add('fa-eye');
   }
+}
+
+// === HÀM HIỂN THỊ TOAST MESSAGE (GLOBAL) ===
+function showToastMessage(msg, type) {
+  console.log('Showing toast:', { msg, type }); // Debug log
+  
+  // Tạo toast notification
+  const toast = document.createElement('div');
+  toast.className = `toast-notification ${type}`;
+  
+  const iconClass = type === 'success' ? 'fa-check' : 'fa-times';
+  
+  toast.innerHTML = `
+    <div class="toast-content">
+      <div class="toast-icon">
+        <i class="fa-solid ${iconClass}"></i>
+      </div>
+      <div class="toast-message">${msg}</div>
+      <button class="toast-close" onclick="this.parentElement.parentElement.remove()">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+  `;
+  
+  document.body.appendChild(toast);
+  
+  // Hiển thị toast
+  setTimeout(() => {
+    toast.classList.add('show');
+  }, 100);
+  
+  // Tự động ẩn sau 5 giây
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => {
+      if (toast.parentElement) {
+        toast.remove();
+      }
+    }, 400);
+  }, 5000);
 }

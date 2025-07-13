@@ -28,6 +28,25 @@ function displayConversations(conversations) {
     chatListDiv.innerHTML = "";
     if (conversations.length === 0 && typeof showWelcomeEmptyChat === 'function') showWelcomeEmptyChat();
 
+    // Nếu không có cuộc trò chuyện nào (kết quả tìm kiếm rỗng), reset UI chat
+    if (conversations.length === 0) {
+        // Ẩn header
+        const chatHeader = document.getElementById('chat-header');
+        if (chatHeader) chatHeader.innerHTML = '';
+        // Xóa nội dung chat
+        const chatMessages = document.getElementById('chat-messages');
+        if (chatMessages) chatMessages.innerHTML = '';
+        // Ẩn input
+        const chatInput = document.getElementById('chat-input-container');
+        if (chatInput) chatInput.innerHTML = '';
+        // Hiện lại welcome
+        const welcome = document.getElementById('welcome-empty-chat');
+        if (welcome) welcome.style.display = 'flex';
+        // Xóa trạng thái chat hiện tại
+        window.currentChatId = null;
+        return;
+    }
+
     conversations.forEach(chat => {
         const chatItem = document.createElement("div");
         chatItem.className = "chat-item";
